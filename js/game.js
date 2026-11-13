@@ -3,8 +3,8 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
 const TILE = 60;
-const WORLD_COLS = 24;
-const WORLD_ROWS = 20;
+const WORLD_COLS = 22;
+const WORLD_ROWS = 16;
 const WORLD_WIDTH = WORLD_COLS * TILE;
 const WORLD_HEIGHT = WORLD_ROWS * TILE;
 
@@ -37,56 +37,53 @@ for (let y = 0; y < WORLD_ROWS; y++) {
 }
 
 const obstacles = [
-  // Upper-left: large concrete block with L-shaped crates
-  [3, 3, 2, 2],
+  // Upper-left: large concrete block and L-shaped crates
+  [3, 2, 2, 2],
+  [5, 2, 1, 1],
   [5, 3, 1, 1],
-  [5, 4, 1, 1],
-  [4, 5, 1, 1],
+  [4, 4, 1, 1],
 
-  // Upper-middle: long concrete wall and containers
-  [8, 3, 4, 1],
-  [8, 4, 2, 1],
-  [10, 4, 2, 1],
+  // Upper-middle: long wall and containers
+  [8, 2, 4, 1],
+  [8, 3, 2, 1],
+  [10, 3, 2, 1],
 
-  // Upper-right: large concrete block with attached crates
-  [17, 3, 2, 2],
+  // Upper-right: large concrete block and attached crates
+  [17, 2, 2, 2],
+  [16, 2, 1, 1],
   [16, 3, 1, 1],
-  [16, 4, 1, 1],
 
-  // Middle-left: long wall and crate extension
-  [3, 8, 4, 1],
-  [3, 9, 2, 1],
-  [6, 9, 1, 2],
+  // Middle-left: long wall with crate extension
+  [3, 6, 4, 1],
+  [3, 7, 2, 1],
+  [6, 7, 1, 2],
 
-  // Centre: large concrete structure and container line
-  [9, 8, 2, 2],
-  [11, 8, 3, 1],
+  // Centre: concrete structure and container line
+  [9, 6, 2, 2],
+  [11, 6, 3, 1],
 
-  // Middle-right: long wall with attached containers
-  [15, 8, 4, 1],
-  [15, 9, 2, 1],
-  [18, 9, 1, 2],
+  // Middle-right: long wall and attached crates
+  [16, 6, 4, 1],
+  [16, 7, 2, 1],
+  [19, 7, 1, 2],
 
   // Lower-left: open U-shaped hiding structure
-  [3, 13, 1, 3],
-  [6, 13, 1, 3],
-  [4, 15, 2, 1],
+  [3, 11, 1, 3],
+  [6, 11, 1, 3],
+  [4, 13, 2, 1],
 
-  // Lower-middle-left: large cargo container
-  [9, 14, 2, 2],
+  // Lower-middle-left: large container
+  [9, 11, 2, 2],
 
-  // Lower-middle: concrete wall and cargo containers
-  [12, 14, 3, 1],
-  [12, 15, 2, 2],
+  // Lower-middle: concrete wall and containers
+  [12, 11, 3, 1],
+  [12, 12, 2, 2],
 
-  // Lower-middle-right: concrete block and L-shaped crates
-  [17, 14, 2, 2],
-  [19, 14, 1, 1],
-  [19, 15, 1, 1],
-  [18, 16, 2, 1],
-
-  // Far-right: additional narrow hiding structure
-  [21, 13, 1, 3]
+  // Lower-right: concrete block and L-shaped crates
+  [17, 11, 2, 2],
+  [19, 11, 1, 1],
+  [19, 12, 1, 1],
+  [18, 13, 2, 1]
 ];
 
 for (const [x, y, w, h] of obstacles) {
@@ -280,13 +277,13 @@ function makeGuard(x,y,patrol) {
 }
 
 const guards = [
-  makeGuard(7, 6, [[7,6],[8,6],[8,7],[7,7]]),
+  makeGuard(8, 5, [[8,5],[13,5],[13,4],[8,4]]),
 
-  makeGuard(16, 6, [[16,6],[19,6],[19,7],[16,7]]),
+  makeGuard(17, 5, [[17,5],[20,5],[20,4],[17,4]]),
 
-  makeGuard(8, 12, [[8,12],[11,12],[11,13],[8,13]]),
+  makeGuard(8, 9, [[8,9],[13,9],[13,10],[8,10]]),
 
-  makeGuard(19, 12, [[19,12],[20,12],[20,13],[19,12]])
+  makeGuard(17, 9, [[17,9],[20,9],[20,10],[17,10]])
 ];
 
 // Shorter and narrower vision.
@@ -872,14 +869,12 @@ function drawObstacles() {
 // Concrete barriers distributed throughout the formations.
 const concreteGroups = new Set([
   0, 4, 7, 10, 13, 15,
-  18, 19, 20, 22, 24, 28
+  18, 19, 20, 22, 24
 ]);
 
-// Selected crates get industrial warning stripes.
 const hazardGroups = new Set([
-  6, 16, 23, 29
+  6, 16, 23, 27
 ]);
-
   obstacles.forEach(([x, y, w, h], index) => {
     if (concreteGroups.has(index)) {
       drawConcreteCluster(x, y, w, h);
