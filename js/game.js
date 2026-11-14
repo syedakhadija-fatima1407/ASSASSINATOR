@@ -1,9 +1,8 @@
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
-
 const TILE = 60;
-const WORLD_COLS = 22;
+const WORLD_COLS = 14;
 const WORLD_ROWS = 16;
 const WORLD_WIDTH = WORLD_COLS * TILE;
 const WORLD_HEIGHT = WORLD_ROWS * TILE;
@@ -37,53 +36,36 @@ for (let y = 0; y < WORLD_ROWS; y++) {
 }
 
 const obstacles = [
-  // Upper-left: large concrete block and L-shaped crates
-  [3, 2, 2, 2],
-  [5, 2, 1, 1],
+  // Upper-left: large concrete block with attached crate
+  [3, 3, 2, 2],
   [5, 3, 1, 1],
-  [4, 4, 1, 1],
 
-  // Upper-middle: long wall and containers
-  [8, 2, 4, 1],
-  [8, 3, 2, 1],
-  [10, 3, 2, 1],
-
-  // Upper-right: large concrete block and attached crates
-  [17, 2, 2, 2],
-  [16, 2, 1, 1],
-  [16, 3, 1, 1],
+  // Upper-middle: long concrete barrier
+  [7, 3, 2, 1],
+  [10, 3, 1, 2],
+  [11, 5, 1, 1],
 
   // Middle-left: long wall with crate extension
-  [3, 6, 4, 1],
-  [3, 7, 2, 1],
-  [6, 7, 1, 2],
+  [2, 7, 3, 1],
+  [2, 8, 1, 1],
 
-  // Centre: concrete structure and container line
-  [9, 6, 2, 2],
-  [11, 6, 3, 1],
+  // Centre: large hiding structure
+  [6, 7, 2, 2],
+  [8, 7, 2, 1],
 
-  // Middle-right: long wall and attached crates
-  [16, 6, 4, 1],
-  [16, 7, 2, 1],
-  [19, 7, 1, 2],
+  // Middle-right: concrete barrier
+  [10, 7, 2, 1],
 
-  // Lower-left: open U-shaped hiding structure
-  [3, 11, 1, 3],
-  [6, 11, 1, 3],
-  [4, 13, 2, 1],
+  // Lower-left: L-shaped hiding arrangement
+  [3, 11, 1, 2],
+  [4, 12, 2, 1],
 
-  // Lower-middle-left: large container
-  [9, 11, 2, 2],
+  // Lower-middle: large cargo container
+  [7, 11, 2, 2],
 
-  // Lower-middle: concrete wall and containers
-  [12, 11, 3, 1],
-  [12, 12, 2, 2],
-
-  // Lower-right: concrete block and L-shaped crates
-  [17, 11, 2, 2],
-  [19, 11, 1, 1],
-  [19, 12, 1, 1],
-  [18, 13, 2, 1]
+  // Lower-right: concrete block
+  [10, 11, 2, 2],
+  [11, 13, 1, 1]
 ];
 
 for (const [x, y, w, h] of obstacles) {
@@ -96,7 +78,7 @@ const player = {
   x: TILE * 2.5,
   y: TILE * 2.5,
   speed: 190,
-  radius: 17,
+  radius: 19,
   health: 100,
   maxHealth: 100,
   angle: 0,
@@ -277,15 +259,22 @@ function makeGuard(x,y,patrol) {
 }
 
 const guards = [
-  makeGuard(8, 5, [[8,5],[13,5],[13,4],[8,4]]),
+  makeGuard(6, 5, [
+    [6,5], [7,5], [7,6], [6,6]
+  ]),
 
-  makeGuard(17, 5, [[17,5],[20,5],[20,4],[17,4]]),
+  makeGuard(11, 2, [
+    [11,2], [12,2], [12,3], [11,3]
+  ]),
 
-  makeGuard(8, 9, [[8,9],[13,9],[13,10],[8,10]]),
+  makeGuard(5, 9, [
+    [5,9], [5,10], [6,10], [6,9]
+  ]),
 
-  makeGuard(17, 9, [[17,9],[20,9],[20,10],[17,10]])
+  makeGuard(9, 9, [
+    [9,9], [9,10], [10,10], [10,9]
+  ])
 ];
-
 // Shorter and narrower vision.
 const VISION_RANGE = TILE*2.5;
 const VISION_ANGLE = Math.PI/4;
@@ -451,7 +440,7 @@ function updatePlayer(delta) {
     );
 
     // Automatically assassinate when close enough.
-    if (distance <= 34) {
+    if (distance <= 40) {
       assassinateGuard(guard);
       return;
     }
@@ -517,7 +506,7 @@ function updatePlayer(delta) {
     }
  // Check again after movement.
     if (
-      Math.hypot(guard.x - player.x, guard.y - player.y) <= 34
+      Math.hypot(guard.x - player.x, guard.y - player.y) <= 40
     ) {
       assassinateGuard(guard);
     }
@@ -868,12 +857,11 @@ function drawObstacles() {
   // Concrete barriers distributed throughout the formations.
 // Concrete barriers distributed throughout the formations.
 const concreteGroups = new Set([
-  0, 4, 7, 10, 13, 15,
-  18, 19, 20, 22, 24
+  0, 2, 5, 7, 9, 10, 13
 ]);
 
 const hazardGroups = new Set([
-  6, 16, 23, 27
+  4, 8, 14
 ]);
   obstacles.forEach(([x, y, w, h], index) => {
     if (concreteGroups.has(index)) {
@@ -918,87 +906,117 @@ function drawGuard(guard) {
   if (guard.dead) return;
 
   ctx.save();
-  ctx.translate(guard.x,guard.y);
+  ctx.translate(guard.x, guard.y);
   ctx.rotate(guard.angle);
 
-  ctx.fillStyle="#26323a";
-  ctx.beginPath();
-  ctx.ellipse(0,0,13,16,0,0,Math.PI*2);
-  ctx.fill();
+  // Increase character size.
+  ctx.scale(1.4, 1.4);
 
-  ctx.strokeStyle="#c5b49b";
-  ctx.lineWidth=5;
+  // Legs and boots.
+  ctx.strokeStyle = "#202a30";
+  ctx.lineWidth = 7;
+  ctx.lineCap = "round";
+
   ctx.beginPath();
-  ctx.moveTo(2,-8);
-  ctx.lineTo(13,-8);
-  ctx.moveTo(2,8);
-  ctx.lineTo(13,8);
+  ctx.moveTo(-5, -7);
+  ctx.lineTo(-11, -16);
+  ctx.moveTo(-5, 7);
+  ctx.lineTo(-11, 16);
   ctx.stroke();
 
-  ctx.fillStyle="#c99b75";
+  // Main body.
+  ctx.fillStyle = "#26323a";
   ctx.beginPath();
-  ctx.arc(11,0,8,0,Math.PI*2);
+  ctx.ellipse(0, 0, 14, 17, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Arms.
+  ctx.strokeStyle = "#c5b49b";
+  ctx.lineWidth = 6;
+
+  ctx.beginPath();
+  ctx.moveTo(1, -9);
+  ctx.lineTo(14, -11);
+  ctx.moveTo(1, 9);
+  ctx.lineTo(14, 11);
+  ctx.stroke();
+
+  // Head.
+  ctx.fillStyle = "#c99b75";
+  ctx.beginPath();
+  ctx.arc(12, 0, 9, 0, Math.PI * 2);
   ctx.fill();
 
   // Gun.
-  ctx.fillStyle="#17191b";
-  ctx.fillRect(15,-3,15,6);
+  ctx.fillStyle = "#17191b";
+  ctx.fillRect(17, -3.5, 18, 7);
 
   ctx.restore();
 
-  if (guard.state==="alert") {
-    ctx.fillStyle="#ff3333";
-    ctx.font="bold 20px Arial";
-    ctx.fillText("!",guard.x-4,guard.y-25);
+  if (guard.state === "alert") {
+    ctx.fillStyle = "#ff3333";
+    ctx.font = "bold 20px Arial";
+    ctx.fillText("!", guard.x - 4, guard.y - 32);
   }
 }
 
 function drawPlayer() {
-  const moving=pathIndex<path.length ||
-    keys.w||keys.a||keys.s||keys.d||
-    keys.arrowup||keys.arrowdown||
-    keys.arrowleft||keys.arrowright;
+  const moving = pathIndex < path.length ||
+    keys.w || keys.a || keys.s || keys.d ||
+    keys.arrowup || keys.arrowdown ||
+    keys.arrowleft || keys.arrowright;
 
-  const step=moving?Math.sin(player.walkTime)*5:0;
+  const step = moving ? Math.sin(player.walkTime) * 5 : 0;
 
   ctx.save();
-  ctx.translate(player.x,player.y);
+  ctx.translate(player.x, player.y);
   ctx.rotate(player.angle);
 
-  ctx.strokeStyle="#202c3b";
-  ctx.lineWidth=7;
-  ctx.lineCap="round";
+  // Increase character size.
+  ctx.scale(1.4, 1.4);
+
+  // Legs.
+  ctx.strokeStyle = "#202c3b";
+  ctx.lineWidth = 8;
+  ctx.lineCap = "round";
+
   ctx.beginPath();
-  ctx.moveTo(-3,-5);
-  ctx.lineTo(-9+step,-13);
-  ctx.moveTo(-3,5);
-  ctx.lineTo(-9-step,13);
+  ctx.moveTo(-4, -7);
+  ctx.lineTo(-11 + step, -17);
+  ctx.moveTo(-4, 7);
+  ctx.lineTo(-11 - step, 17);
   ctx.stroke();
 
-  ctx.fillStyle="#263e50";
+  // Main body.
+  ctx.fillStyle = "#263e50";
   ctx.beginPath();
-  ctx.ellipse(0,0,12,15,0,0,Math.PI*2);
+  ctx.ellipse(0, 0, 14, 17, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.strokeStyle="#d5aa83";
-  ctx.lineWidth=5;
+  // Arms.
+  ctx.strokeStyle = "#d5aa83";
+  ctx.lineWidth = 6;
+
   ctx.beginPath();
-  ctx.moveTo(1,-8);
-  ctx.lineTo(13,-11);
-  ctx.moveTo(1,8);
-  ctx.lineTo(13,11);
+  ctx.moveTo(2, -9);
+  ctx.lineTo(15, -12);
+  ctx.moveTo(2, 9);
+  ctx.lineTo(15, 12);
   ctx.stroke();
 
-  ctx.strokeStyle="#d7dce0";
-  ctx.lineWidth=3;
+  // Knife.
+  ctx.strokeStyle = "#d7dce0";
+  ctx.lineWidth = 3;
+
   ctx.beginPath();
-  ctx.moveTo(13,-11);
-  ctx.lineTo(25,-13);
+  ctx.moveTo(15, -12);
+  ctx.lineTo(29, -15);
   ctx.stroke();
 
-  ctx.fillStyle="#d8ad87";
+  // Head.
+  ctx.fillStyle = "#d8ad87";
   ctx.beginPath();
-  ctx.arc(11,0,8,0,Math.PI*2);
+  ctx.arc(12, 0, 9, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.restore();
@@ -1145,7 +1163,7 @@ canvas.addEventListener("pointerdown",e=>{
   const wy=e.clientY-rect.top+camera.y;
 
   const clickedGuard=guards.find(g=>
-    !g.dead && Math.hypot(g.x-wx,g.y-wy)<27
+!g.dead && Math.hypot(g.x-wx,g.y-wy)<34
   );
 
   if(clickedGuard) {
