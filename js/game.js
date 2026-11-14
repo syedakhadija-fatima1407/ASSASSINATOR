@@ -2,8 +2,8 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const TILE = 60;
-const WORLD_COLS = 14;
-const WORLD_ROWS = 16;
+const WORLD_COLS = 16;
+const WORLD_ROWS = 19;
 const WORLD_WIDTH = WORLD_COLS * TILE;
 const WORLD_HEIGHT = WORLD_ROWS * TILE;
 
