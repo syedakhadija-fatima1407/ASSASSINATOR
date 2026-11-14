@@ -910,7 +910,7 @@ function drawGuard(guard) {
   ctx.rotate(guard.angle);
 
   // Increase character size.
-  ctx.scale(1.3, 1.3);
+  ctx.scale(1.1, 1.1);
 
   // Legs and boots.
   ctx.strokeStyle = "#202a30";
@@ -973,7 +973,7 @@ function drawPlayer() {
   ctx.rotate(player.angle);
 
   // Increase character size.
-  ctx.scale(1.3, 1.3);
+  ctx.scale(1.1, 1.1);
 
   // Legs.
   ctx.strokeStyle = "#202c3b";
