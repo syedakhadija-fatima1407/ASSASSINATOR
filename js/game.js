@@ -35,38 +35,70 @@ for (let y = 0; y < WORLD_ROWS; y++) {
   map[y][WORLD_COLS - 1] = 1;
 }
 
+
 const obstacles = [
-  // Upper-left: large concrete block with attached crate
-  [3, 3, 2, 2],
-  [5, 3, 1, 1],
+  // =====================================
+  // CONCRETE WALLS — KEEP EXACTLY AS THEY ARE
+  // =====================================
+  [3, 3, 1, 5],
+  [3, 7, 4, 1],
 
-  // Upper-middle: long concrete barrier
-  [7, 3, 2, 1],
-  [10, 3, 1, 2],
-  [11, 5, 1, 1],
+  [7, 3, 3, 1],
+  [9, 3, 1, 3],
 
-  // Middle-left: long wall with crate extension
-  [2, 7, 3, 1],
-  [2, 8, 1, 1],
+  [6, 8, 1, 4],
+  [6, 11, 4, 1],
 
-  // Centre: large hiding structure
-  [6, 7, 2, 2],
-  [8, 7, 2, 1],
+  [12, 7, 1, 4],
+  [10, 7, 3, 1],
 
-  // Middle-right: concrete barrier
-  [10, 7, 2, 1],
+  [3, 13, 3, 1],
+  [3, 13, 1, 3],
 
-  // Lower-left: L-shaped hiding arrangement
-  [3, 11, 1, 2],
-  [4, 12, 2, 1],
+  [8, 15, 4, 1],
+  [11, 13, 1, 3],
 
-  // Lower-middle: large cargo container
-  [7, 11, 2, 2],
+  [5, 14, 2, 2],
 
-  // Lower-right: concrete block
-  [10, 11, 2, 2],
-  [11, 13, 1, 1]
+  // =====================================
+  // EXISTING WOODEN CRATES
+  // =====================================
+  [9, 4, 2, 1],
+  [9, 5, 2, 1],
+
+  [2, 10, 1, 2],
+
+  [5, 5, 1, 2],
+
+  [13, 15, 2, 1],
+
+  // =====================================
+  // EXISTING BLUE CARGO CONTAINERS
+  // =====================================
+  [12, 5, 2, 1],  // Relocated to avoid concrete overlap.
+  [12, 11, 2, 1],
+  [12, 17, 2, 1],
+
+  // =====================================
+  // NEW WOODEN CRATE FORMATIONS
+  // =====================================
+
+  // Extends the upper crate formation.
+  [11, 4, 1, 2],
+
+  // Lower-middle storage group.
+  [7, 13, 2, 1],
+
+  // Connected lower-right crate formation.
+  [13, 13, 2, 2]
 ];
+
+for (const [x, y, w, h] of obstacles) {
+  for (let row = y; row < y + h; row++)
+    for (let col = x; col < x + w; col++)
+      map[row][col] = 1;
+}
+
 
 for (const [x, y, w, h] of obstacles) {
   for (let row = y; row < y + h; row++)
@@ -133,17 +165,23 @@ function nearestWalkableTile(col, row) {
 }
 
 function clearLine(x1, y1, x2, y2) {
-  const distance = Math.hypot(x2-x1, y2-y1);
-  const steps = Math.ceil(distance / 12);
+  const distance = Math.hypot(x2 - x1, y2 - y1);
+  const steps = Math.ceil(distance / 4);
 
   for (let i = 1; i < steps; i++) {
     const t = i / steps;
-    const x = x1 + (x2-x1)*t;
-    const y = y1 + (y2-y1)*t;
 
-    if (!isWalkable(Math.floor(x/TILE), Math.floor(y/TILE)))
+    const x = x1 + (x2 - x1) * t;
+    const y = y1 + (y2 - y1) * t;
+
+    const tileX = Math.floor(x / TILE);
+    const tileY = Math.floor(y / TILE);
+
+    if (!isWalkable(tileX, tileY)) {
       return false;
+    }
   }
+
   return true;
 }
 
@@ -237,25 +275,80 @@ function findPath(start, goal, safe = false) {
   return [];
 }
 
-function makeGuard(x,y,patrol) {
+function makeGuard(x, y, patrol) {
   return {
-    x:x*TILE+TILE/2,
-    y:y*TILE+TILE/2,
-    angle:0,
-    speed:65,
-    patrol:patrol.map(([px,py]) => ({
-      x:px*TILE+TILE/2,
-      y:py*TILE+TILE/2
+    x: x * TILE + TILE / 2,
+    y: y * TILE + TILE / 2,
+    angle: Math.random() * Math.PI * 2,
+
+    // Slightly different speed for every guard.
+    speed: 60 + Math.random() * 15,
+    patrolSpeed: 48 + Math.random() * 24,
+
+    patrol: patrol.map(([px, py]) => ({
+      x: px * TILE + TILE / 2,
+      y: py * TILE + TILE / 2
     })),
-    patrolIndex:0,
-    state:"patrol",
-    dead:false,
-    shotCooldown:0,
-    suspicion:0,
-    lastSeenX:x*TILE+TILE/2,
-    lastSeenY:y*TILE+TILE/2,
-    searchTimer:0
+
+    // Independent patrol route.
+    patrolPath: [],
+    patrolPathIndex: 0,
+    patrolTarget: null,
+
+    // Different starting delay for every guard.
+    patrolPause: Math.random() * 3,
+
+    state: "patrol",
+    dead: false,
+    shotCooldown: 0,
+    suspicion: 0,
+    lastSeenX: x * TILE + TILE / 2,
+    lastSeenY: y * TILE + TILE / 2,
+    searchTimer: 0,
+    searchPath: [],
+    searchPathIndex: 0
   };
+}
+
+function choosePatrolDestination(guard) {
+  const start = {
+    x: Math.floor(guard.x / TILE),
+    y: Math.floor(guard.y / TILE)
+  };
+
+  const candidates = [];
+
+  // Collect walkable destinations throughout the room.
+  for (let y = 1; y < WORLD_ROWS - 1; y++) {
+    for (let x = 1; x < WORLD_COLS - 1; x++) {
+      if (!isWalkable(x, y)) continue;
+
+      const distance =
+        Math.abs(x - start.x) + Math.abs(y - start.y);
+
+      // Avoid choosing destinations too close to the guard.
+      if (distance >= 6) {
+        candidates.push({ x, y });
+      }
+    }
+  }
+
+  // Try random destinations until a valid route is found.
+  while (candidates.length > 0) {
+    const index = Math.floor(Math.random() * candidates.length);
+    const destination = candidates.splice(index, 1)[0];
+
+    const newPath = findPath(start, destination, false);
+
+    if (newPath.length > 0) {
+      guard.patrolTarget = destination;
+      guard.patrolPath = newPath;
+      guard.patrolPathIndex = 0;
+      return true;
+    }
+  }
+
+  return false;
 }
 
 const guards = [
@@ -322,79 +415,177 @@ function showMessage(text) {
 }
 
 // Guard detection, searching and patrol.
+
 function updateGuards(delta) {
   for (const guard of guards) {
     if (guard.dead) continue;
 
-    guard.shotCooldown = Math.max(0, guard.shotCooldown - delta);
+    guard.shotCooldown = Math.max(
+      0,
+      guard.shotCooldown - delta
+    );
+
     const sees = guardSeesPlayer(guard);
 
+    // =====================================
+    // PLAYER VISIBLE: ALERT AND PURSUE
+    // =====================================
     if (sees) {
       guard.state = "alert";
       guard.suspicion = 1;
+
       guard.lastSeenX = player.x;
       guard.lastSeenY = player.y;
-      guard.searchTimer = 3.5;
+
+      guard.searchTimer = 8;
+      guard.searchPath = [];
+      guard.searchPathIndex = 0;
+
       guard.angle = Math.atan2(
         player.y - guard.y,
         player.x - guard.x
       );
 
-      // Guards only shoot while they have clear sight.
       if (guard.shotCooldown <= 0) {
-        player.health = Math.max(0, player.health - 8);
+        player.health = Math.max(
+          0,
+          player.health - 8
+        );
+
         guard.shotCooldown = 1.2;
         showMessage("You've been hit!");
       }
+
       continue;
     }
 
-    // The player is hidden: investigate the last known position.
+    // =====================================
+    // PLAYER HIDDEN: INVESTIGATE LAST POSITION
+    // =====================================
     if (guard.state === "alert") {
       guard.state = "search";
-      guard.searchTimer = Math.max(guard.searchTimer, 3.5);
-      guard.suspicion = 1;
+      guard.searchTimer = 8;
+
+      const start = {
+        x: Math.floor(guard.x / TILE),
+        y: Math.floor(guard.y / TILE)
+      };
+
+      const goal = {
+        x: Math.floor(guard.lastSeenX / TILE),
+        y: Math.floor(guard.lastSeenY / TILE)
+      };
+
+      guard.searchPath = findPath(
+        start,
+        goal,
+        false
+      );
+
+      guard.searchPathIndex = 0;
     }
 
+    // =====================================
+    // SEARCH USING A* PATHFINDING
+    // =====================================
     if (guard.state === "search") {
       guard.searchTimer -= delta;
 
-      const dx = guard.lastSeenX - guard.x;
-      const dy = guard.lastSeenY - guard.y;
-      const distance = Math.hypot(dx, dy);
+      if (
+        guard.searchPathIndex <
+        guard.searchPath.length
+      ) {
+        const waypoint =
+          guard.searchPath[guard.searchPathIndex];
 
-      if (distance > 7 && guard.searchTimer > 0) {
-        guard.angle = Math.atan2(dy, dx);
-        const step = Math.min(guard.speed * 1.15 * delta, distance);
-        const nx = guard.x + dx / distance * step;
-        const ny = guard.y + dy / distance * step;
+        const dx = waypoint.x - guard.x;
+        const dy = waypoint.y - guard.y;
 
-        // Do not walk through obstacles.
-        if (isWalkable(Math.floor(nx / TILE), Math.floor(ny / TILE))) {
-          guard.x = nx;
-          guard.y = ny;
+        const distance = Math.hypot(dx, dy);
+
+        if (distance < 5) {
+          guard.searchPathIndex++;
+        } else {
+          guard.angle = Math.atan2(dy, dx);
+
+          const step = Math.min(
+            guard.speed * 1.2 * delta,
+            distance
+          );
+
+          guard.x += (dx / distance) * step;
+          guard.y += (dy / distance) * step;
         }
-      } else if (guard.searchTimer <= 0) {
+      }
+
+      if (guard.searchTimer <= 0) {
         guard.state = "patrol";
         guard.suspicion = 0;
+
+        guard.searchPath = [];
+        guard.searchPathIndex = 0;
+
+        guard.patrolTarget = null;
+        guard.patrolPath = [];
+        guard.patrolPathIndex = 0;
+
+        guard.patrolPause = 0.8;
       }
+
       continue;
     }
 
-    // Normal patrol.
-    const target = guard.patrol[guard.patrolIndex];
-    const dx = target.x - guard.x;
-    const dy = target.y - guard.y;
+    // =====================================
+    // NORMAL INDEPENDENT PATROL
+    // =====================================
+    if (guard.patrolPause > 0) {
+      guard.patrolPause -= delta;
+      continue;
+    }
+
+    if (!guard.patrolTarget) {
+      if (!choosePatrolDestination(guard)) {
+        guard.patrolPause = 1;
+        continue;
+      }
+    }
+
+    if (
+      guard.patrolPathIndex >=
+      guard.patrolPath.length
+    ) {
+      guard.patrolTarget = null;
+      guard.patrolPath = [];
+      guard.patrolPathIndex = 0;
+
+      guard.patrolPause =
+        0.7 + Math.random() * 1.8;
+
+      continue;
+    }
+
+    const waypoint =
+      guard.patrolPath[guard.patrolPathIndex];
+
+    const dx = waypoint.x - guard.x;
+    const dy = waypoint.y - guard.y;
+
     const distance = Math.hypot(dx, dy);
 
-    if (distance < 5) {
-      guard.patrolIndex = (guard.patrolIndex + 1) % guard.patrol.length;
-    } else {
-      guard.angle = Math.atan2(dy, dx);
-      const speed = guard.speed * delta;
-      guard.x += dx / distance * speed;
-      guard.y += dy / distance * speed;
+    if (distance < 4) {
+      guard.patrolPathIndex++;
+      continue;
     }
+
+    guard.angle = Math.atan2(dy, dx);
+
+    const step = Math.min(
+      guard.patrolSpeed * delta,
+      distance
+    );
+
+    guard.x += (dx / distance) * step;
+    guard.y += (dy / distance) * step;
   }
 }
 
@@ -631,89 +822,180 @@ function drawFloor() {
 }
 
 // Individual concrete barrier blocks.
+
+// Continuous, uniform concrete walls and barriers.
+
+
 function drawConcreteCluster(x, y, w, h) {
-  const px = x * TILE + 3;
-  const py = y * TILE + 3;
-  const width = w * TILE - 6;
-  const height = h * TILE - 6;
+  const px = x * TILE + 2;
+  const py = y * TILE + 2;
+  const width = w * TILE - 4;
+  const height = h * TILE - 4;
+
+  const depth = 9;
 
   ctx.save();
 
+  // Keep all concrete drawing inside the room.
+  ctx.beginPath();
+  ctx.rect(
+    0,
+    0,
+    WORLD_COLS * TILE,
+    WORLD_ROWS * TILE
+  );
+  ctx.clip();
+
   // Ground shadow.
+  ctx.shadowColor = "rgba(0,0,0,0.35)";
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 5;
+
+  roundedRectPath(px, py, width, height, 5);
+  ctx.fillStyle = "#514f49";
+  ctx.fill();
+
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+
+  // Right-facing raised side.
+  ctx.beginPath();
+  ctx.moveTo(px + width, py + 5);
+  ctx.lineTo(px + width + depth, py + depth + 5);
+  ctx.lineTo(px + width + depth, py + height + depth);
+  ctx.lineTo(px + width, py + height);
+  ctx.closePath();
+
+  const sideGradient = ctx.createLinearGradient(
+    px + width, py,
+    px + width + depth, py
+  );
+
+  sideGradient.addColorStop(0, "#65635c");
+  sideGradient.addColorStop(1, "#393a36");
+
+  ctx.fillStyle = sideGradient;
+  ctx.fill();
+
+  // Front-facing raised side.
+  ctx.beginPath();
+  ctx.moveTo(px, py + height);
+  ctx.lineTo(px + width, py + height);
+  ctx.lineTo(px + width + depth, py + height + depth);
+  ctx.lineTo(px + depth, py + height + depth);
+  ctx.closePath();
+
+  const frontGradient = ctx.createLinearGradient(
+    px, py + height,
+    px, py + height + depth
+  );
+
+  frontGradient.addColorStop(0, "#66645d");
+  frontGradient.addColorStop(1, "#41413c");
+
+  ctx.fillStyle = frontGradient;
+  ctx.fill();
+
+  // Concrete top surface.
+  roundedRectPath(px, py, width, height, 5);
+
+  const topGradient = ctx.createLinearGradient(
+    px, py,
+    px + width, py + height
+  );
+
+  topGradient.addColorStop(0, "#b2afa5");
+  topGradient.addColorStop(0.45, "#99968d");
+  topGradient.addColorStop(1, "#85837b");
+
+  ctx.fillStyle = topGradient;
+  ctx.fill();
+
+  // Clean outer bevel.
+  ctx.strokeStyle = "#514b44";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Subtle concrete texture.
+  ctx.fillStyle = "rgba(45,42,38,0.12)";
+
+  for (let i = 0; i < Math.floor((w * h) * 5); i++) {
+    const mx = px + 9 +
+      ((i * 23) % Math.max(10, width - 18));
+
+    const my = py + 9 +
+      ((i * 17) % Math.max(10, height - 18));
+
+    ctx.fillRect(mx, my, 2, 2);
+  }
+
+  ctx.restore();
+}
+
+function drawConcreteL(x, y, w, h, mirror = false) {
+  const px = x * TILE + 2;
+  const py = y * TILE + 2;
+  const width = w * TILE - 4;
+  const height = h * TILE - 4;
+
+  ctx.save();
+
+  function makeShape() {
+    ctx.beginPath();
+
+    if (!mirror) {
+      ctx.moveTo(px, py);
+      ctx.lineTo(px + TILE, py);
+      ctx.lineTo(px + TILE, py + height - TILE);
+      ctx.lineTo(px + width, py + height - TILE);
+      ctx.lineTo(px + width, py + height);
+      ctx.lineTo(px, py + height);
+    } else {
+      ctx.moveTo(px + width - TILE, py);
+      ctx.lineTo(px + width, py);
+      ctx.lineTo(px + width, py + height);
+      ctx.lineTo(px, py + height);
+      ctx.lineTo(px, py + height - TILE);
+      ctx.lineTo(px + width - TILE, py + height - TILE);
+    }
+
+    ctx.closePath();
+  }
+
+  makeShape();
   ctx.shadowColor = "rgba(0,0,0,0.38)";
   ctx.shadowBlur = 12;
-  ctx.shadowOffsetY = 7;
-
-  roundedRectPath(px, py, width, height, 9);
-  ctx.fillStyle = "#382b27";
+  ctx.shadowOffsetY = 6;
+  ctx.fillStyle = "#77766f";
   ctx.fill();
 
   ctx.shadowColor = "transparent";
   ctx.shadowBlur = 0;
   ctx.shadowOffsetY = 0;
 
-  // Outer metal rim.
-  roundedRectPath(px + 2, py + 2, width - 4, height - 4, 8);
-  ctx.fillStyle = "#665044";
+  makeShape();
+
+  const gradient = ctx.createLinearGradient(
+    px, py, px + width, py + height
+  );
+
+  gradient.addColorStop(0, "#aaa79e");
+  gradient.addColorStop(0.5, "#96938a");
+  gradient.addColorStop(1, "#77766f");
+
+  ctx.fillStyle = gradient;
   ctx.fill();
 
-  ctx.strokeStyle = "#302622";
+  ctx.strokeStyle = "#514b44";
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  // Draw each concrete block separately.
-  for (let row = 0; row < h; row++) {
-    for (let col = 0; col < w; col++) {
-      const bx = px + col * TILE + 5;
-      const by = py + row * TILE + 5;
-
-      const bw = TILE - 10;
-      const bh = TILE - 10;
-
-      // Recessed concrete centre.
-      roundedRectPath(bx, by, bw, bh, 5);
-
-      const gradient = ctx.createLinearGradient(
-        bx, by, bx + bw, by + bh
-      );
-
-      gradient.addColorStop(0, "#aaa69c");
-      gradient.addColorStop(0.5, "#918e86");
-      gradient.addColorStop(1, "#77766f");
-
-      ctx.fillStyle = gradient;
-      ctx.fill();
-
-      ctx.strokeStyle = "#51443d";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // Small concrete texture marks.
-      ctx.fillStyle = "rgba(45,42,38,0.13)";
-
-      for (let i = 0; i < 5; i++) {
-        const mx = bx + 10 + ((i * 19 + col * 7) % 35);
-        const my = by + 12 + ((i * 13 + row * 11) % 28);
-
-        ctx.fillRect(mx, my, 3, 2);
-      }
-
-      // Metal bolts in the corners.
-      ctx.fillStyle = "#3d302b";
-
-      for (const [ox, oy] of [
-        [8, 8], [bw - 8, 8],
-        [8, bh - 8], [bw - 8, bh - 8]
-      ]) {
-        ctx.beginPath();
-        ctx.arc(bx + ox, by + oy, 2.3, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-  }
-
   ctx.restore();
 }
+
 
 // Blue industrial shipping containers.
 function drawCargoContainer(x, y, w, h, hazard = false) {
@@ -839,66 +1121,298 @@ function drawCargoContainer(x, y, w, h, hazard = false) {
   ctx.restore();
 }
 
+function drawWoodenCrate(x, y, w, h) {
+  for (let row = 0; row < h; row++) {
+    for (let col = 0; col < w; col++) {
+      const px = (x + col) * TILE;
+      const py = (y + row) * TILE;
+      const size = TILE;
+
+      ctx.save();
+
+      // Shadow
+      ctx.fillStyle = "rgba(0, 0, 0, 0.38)";
+      ctx.fillRect(px + 4, py + 5, size, size);
+
+      // Wooden surface
+      const wood = ctx.createLinearGradient(
+        px, py, px + size, py + size
+      );
+      wood.addColorStop(0, "#b47a3e");
+      wood.addColorStop(0.5, "#98602f");
+      wood.addColorStop(1, "#704322");
+
+      ctx.fillStyle = wood;
+      ctx.fillRect(px, py, size, size);
+
+      // Outer wooden border
+      ctx.strokeStyle = "#503019";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(px, py, size, size);
+
+      // Wooden planks
+      ctx.strokeStyle = "rgba(65, 35, 15, 0.65)";
+      ctx.lineWidth = 2;
+
+      for (let i = 1; i <= 3; i++) {
+        const lineX = px + (size / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(lineX, py + 3);
+        ctx.lineTo(lineX, py + size - 3);
+        ctx.stroke();
+      }
+
+      // Cross-bracing
+      ctx.strokeStyle = "#d09a5c";
+      ctx.lineWidth = 4;
+
+      ctx.beginPath();
+      ctx.moveTo(px + 8, py + 8);
+      ctx.lineTo(px + size - 8, py + size - 8);
+      ctx.moveTo(px + size - 8, py + 8);
+      ctx.lineTo(px + 8, py + size - 8);
+      ctx.stroke();
+
+      // Corner details
+      ctx.fillStyle = "#49301d";
+      const nailSize = 3;
+
+      [
+        [px + 7, py + 7],
+        [px + size - 10, py + 7],
+        [px + 7, py + size - 10],
+        [px + size - 10, py + size - 10]
+      ].forEach(([nx, ny]) => {
+        ctx.fillRect(nx, ny, nailSize, nailSize);
+      });
+
+      ctx.restore();
+    }
+  }
+}
+
+function drawConcreteLayout() {
+  const depth = 9;
+  const concreteTiles = new Set();
+obstacles.slice(0, 13).forEach(([x, y, w, h]) => {
+    for (let tx = x; tx < x + w; tx++) {
+      for (let ty = y; ty < y + h; ty++) {
+        concreteTiles.add(`${tx},${ty}`);
+      }
+    }
+  });
+
+  function hasTile(x, y) {
+    return concreteTiles.has(`${x},${y}`);
+  }
+
+  ctx.save();
+
+  // Keep the concrete inside the warehouse.
+  ctx.beginPath();
+ctx.rect(0, 0, WORLD_COLS * TILE, WORLD_ROWS * TILE);
+  ctx.clip();
+
+  // Build one combined path from all concrete tiles.
+  ctx.beginPath();
+
+  concreteTiles.forEach(key => {
+    const [x, y] = key.split(",").map(Number);
+
+    ctx.rect(
+      x * TILE + 2,
+      y * TILE + 2,
+      TILE - 4,
+      TILE - 4
+    );
+  });
+
+  // One shared shadow for the complete concrete layout.
+  ctx.shadowColor = "rgba(0,0,0,0.34)";
+  ctx.shadowBlur = 11;
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 5;
+
+  ctx.fillStyle = "#514f49";
+  ctx.fill();
+
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+
+  // Exposed right-facing sides only.
+  concreteTiles.forEach(key => {
+    const [x, y] = key.split(",").map(Number);
+
+    if (!hasTile(x + 1, y)) {
+      const px = (x + 1) * TILE - 2;
+      const py = y * TILE + 2;
+
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(px + depth, py + depth);
+      ctx.lineTo(px + depth, py + TILE - 2 + depth);
+      ctx.lineTo(px, py + TILE - 2);
+      ctx.closePath();
+
+      const side = ctx.createLinearGradient(
+        px, py, px + depth, py
+      );
+
+      side.addColorStop(0, "#65635c");
+      side.addColorStop(1, "#393a36");
+
+      ctx.fillStyle = side;
+      ctx.fill();
+    }
+  });
+
+  // Exposed front-facing sides only.
+  concreteTiles.forEach(key => {
+    const [x, y] = key.split(",").map(Number);
+
+    if (!hasTile(x, y + 1)) {
+      const px = x * TILE + 2;
+      const py = (y + 1) * TILE - 2;
+
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(px + TILE - 2, py);
+      ctx.lineTo(px + TILE - 2 + depth, py + depth);
+      ctx.lineTo(px + depth, py + depth);
+      ctx.closePath();
+
+      const front = ctx.createLinearGradient(
+        px, py, px, py + depth
+      );
+
+      front.addColorStop(0, "#66645d");
+      front.addColorStop(1, "#41413c");
+
+      ctx.fillStyle = front;
+      ctx.fill();
+    }
+  });
+
+  // Continuous concrete top surface.
+  ctx.beginPath();
+
+  concreteTiles.forEach(key => {
+    const [x, y] = key.split(",").map(Number);
+
+    ctx.rect(
+      x * TILE + 2,
+      y * TILE + 2,
+      TILE - 4,
+      TILE - 4
+    );
+  });
+
+  const topGradient = ctx.createLinearGradient(
+    0, 0,
+    WORLD_COLS * TILE,
+WORLD_ROWS * TILE
+  );
+
+  topGradient.addColorStop(0, "#b2afa5");
+  topGradient.addColorStop(0.5, "#99968d");
+  topGradient.addColorStop(1, "#85837b");
+
+  ctx.fillStyle = topGradient;
+  ctx.fill();
+
+  ctx.restore();
+}
+
 // Draw all warehouse obstacles with different industrial materials.
+
 function drawObstacles() {
-  // Draw the outer warehouse walls.
+  // Outer warehouse walls.
   ctx.fillStyle = "#303a3c";
 
   for (let x = 0; x < WORLD_COLS; x++) {
     ctx.fillRect(x * TILE, 0, TILE, TILE);
-    ctx.fillRect(x * TILE, (WORLD_ROWS - 1) * TILE, TILE, TILE);
+    ctx.fillRect(
+      x * TILE,
+      (WORLD_ROWS - 1) * TILE,
+      TILE,
+      TILE
+    );
   }
 
   for (let y = 0; y < WORLD_ROWS; y++) {
     ctx.fillRect(0, y * TILE, TILE, TILE);
-    ctx.fillRect((WORLD_COLS - 1) * TILE, y * TILE, TILE, TILE);
+    ctx.fillRect(
+      (WORLD_COLS - 1) * TILE,
+      y * TILE,
+      TILE,
+      TILE
+    );
   }
 
-  // Concrete barriers distributed throughout the formations.
-// Concrete barriers distributed throughout the formations.
-const concreteGroups = new Set([
-  0, 2, 5, 7, 9, 10, 13
-]);
+  // All concrete is rendered as one connected layout.
+  drawConcreteLayout();
 
-const hazardGroups = new Set([
-  4, 8, 14
-]);
+  // Wooden crates and blue cargo containers.
   obstacles.forEach(([x, y, w, h], index) => {
-    if (concreteGroups.has(index)) {
-      drawConcreteCluster(x, y, w, h);
-    } else {
-      drawCargoContainer(
-        x,
-        y,
-        w,
-        h,
-        hazardGroups.has(index)
-      );
-    }
+      // Wooden crates.
+     // Wooden crates: original and newly added groups.
+if (
+  (index >= 13 && index <= 17) ||
+  (index >= 21 && index <= 23)
+) {
+  drawWoodenCrate(x, y, w, h);
+}
+
+// Blue cargo containers.
+if (index >= 18 && index <= 20) {
+  drawCargoContainer(x, y, w, h, false);
+}
   });
 }
+
+
 function drawVision(guard) {
   if (guard.dead) return;
 
   ctx.save();
-  ctx.translate(guard.x,guard.y);
+
+  // Clip vision cones to the warehouse boundaries.
+  ctx.beginPath();
+ctx.rect(
+  0,
+  0,
+  WORLD_COLS * TILE,
+  WORLD_ROWS * TILE
+);  ctx.clip();
+
+  ctx.translate(guard.x, guard.y);
   ctx.rotate(guard.angle);
 
   ctx.beginPath();
-  ctx.moveTo(0,0);
-  ctx.arc(0,0,VISION_RANGE,
-    -VISION_ANGLE/2,VISION_ANGLE/2);
+  ctx.moveTo(0, 0);
+
+  ctx.arc(
+    0,
+    0,
+    VISION_RANGE,
+    -VISION_ANGLE / 2,
+    VISION_ANGLE / 2
+  );
+
   ctx.closePath();
 
   const currentlySeesPlayer = guardSeesPlayer(guard);
 
   ctx.fillStyle = currentlySeesPlayer
-    ? "rgba(255,35,35,.25)"
+    ? "rgba(255,35,35,0.25)"
     : guard.state === "search"
-      ? "rgba(255,155,45,.18)"
-      : "rgba(255,210,65,.13)";
+      ? "rgba(255,155,45,0.18)"
+      : "rgba(255,210,65,0.13)";
 
   ctx.fill();
+
   ctx.restore();
 }
 
@@ -961,63 +1475,437 @@ function drawGuard(guard) {
 }
 
 function drawPlayer() {
-  const moving = pathIndex < path.length ||
+  const moving =
+    pathIndex < path.length ||
     keys.w || keys.a || keys.s || keys.d ||
     keys.arrowup || keys.arrowdown ||
     keys.arrowleft || keys.arrowright;
 
-  const step = moving ? Math.sin(player.walkTime) * 5 : 0;
+  const phase = player.walkTime || 0;
+  const stride = moving ? Math.sin(phase) * 3.2 : 0;
+  const bob = moving ? Math.abs(Math.sin(phase * 2)) * 0.45 : 0;
 
   ctx.save();
   ctx.translate(player.x, player.y);
   ctx.rotate(player.angle);
 
-  // Increase character size.
-  ctx.scale(1.1, 1.1);
+  // Character proportions.
+  ctx.scale(1.08, 1.08);
 
-  // Legs.
-  ctx.strokeStyle = "#202c3b";
-  ctx.lineWidth = 8;
-  ctx.lineCap = "round";
+  // ----------------------------------------
+  // GROUNDED SHADOW
+  // ----------------------------------------
 
+  ctx.save();
+  ctx.fillStyle = "rgba(12, 17, 10, 0.25)";
+  ctx.shadowColor = "rgba(8, 12, 7, 0.22)";
+  ctx.shadowBlur = 7;
   ctx.beginPath();
-  ctx.moveTo(-4, -7);
-  ctx.lineTo(-11 + step, -17);
-  ctx.moveTo(-4, 7);
-  ctx.lineTo(-11 - step, 17);
-  ctx.stroke();
+  ctx.ellipse(-2, 3, 22, 14, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 
-  // Main body.
-  ctx.fillStyle = "#263e50";
+  ctx.translate(0, -bob);
+
+  // ----------------------------------------
+  // LEGS — DIRECTLY UNDER THE TORSO
+  // ----------------------------------------
+
+  function drawLeg(side, step) {
+    const hipX = -6;
+    const hipY = side * 5.5;
+    const kneeX = -10 + step * 0.65;
+    const kneeY = side * 6;
+    const footX = -15 + step;
+
+    // Trouser outline.
+    ctx.strokeStyle = "#202c20";
+    ctx.lineWidth = 8;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    ctx.beginPath();
+    ctx.moveTo(hipX, hipY);
+    ctx.lineTo(kneeX, kneeY);
+    ctx.lineTo(footX, kneeY);
+    ctx.stroke();
+
+    // Deep olive trousers.
+    const trouser = ctx.createLinearGradient(
+      -8, kneeY - 3, -16, kneeY + 3
+    );
+    trouser.addColorStop(0, "#52643a");
+    trouser.addColorStop(0.55, "#394a2d");
+    trouser.addColorStop(1, "#293a25");
+
+    ctx.strokeStyle = trouser;
+    ctx.lineWidth = 5.5;
+    ctx.beginPath();
+    ctx.moveTo(hipX, hipY);
+    ctx.lineTo(kneeX, kneeY);
+    ctx.lineTo(footX, kneeY);
+    ctx.stroke();
+
+    // Knee reinforcement.
+    ctx.fillStyle = "#586a3c";
+    ctx.beginPath();
+    ctx.ellipse(kneeX, kneeY, 3, 2.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Tactical boots, pointing forward.
+    ctx.save();
+    ctx.translate(footX - 2, kneeY);
+
+    ctx.fillStyle = "#18221b";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 6.5, 3.7, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#414b3b";
+    ctx.beginPath();
+    ctx.ellipse(1, -0.8, 4.5, 2.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(190, 194, 157, 0.25)";
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(-2, -1.5);
+    ctx.lineTo(3, -1.5);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // Far leg first, near leg second.
+  drawLeg(-1, -stride);
+  drawLeg(1, stride);
+
+  // ----------------------------------------
+  // SLIM TACTICAL BACKPACK
+  // ----------------------------------------
+
+  ctx.save();
+  ctx.translate(-13, 0);
+
+  ctx.fillStyle = "#19271b";
   ctx.beginPath();
-  ctx.ellipse(0, 0, 14, 17, 0, 0, Math.PI * 2);
+  ctx.roundRect(-8, -7.5, 13, 15, 4);
   ctx.fill();
 
-  // Arms.
-  ctx.strokeStyle = "#d5aa83";
-  ctx.lineWidth = 6;
+  const pack = ctx.createLinearGradient(-7, -7, 5, 7);
+  pack.addColorStop(0, "#52663a");
+  pack.addColorStop(0.5, "#394e2d");
+  pack.addColorStop(1, "#263923");
 
+  ctx.fillStyle = pack;
   ctx.beginPath();
-  ctx.moveTo(2, -9);
-  ctx.lineTo(15, -12);
-  ctx.moveTo(2, 9);
-  ctx.lineTo(15, 12);
-  ctx.stroke();
-
-  // Knife.
-  ctx.strokeStyle = "#d7dce0";
-  ctx.lineWidth = 3;
-
-  ctx.beginPath();
-  ctx.moveTo(15, -12);
-  ctx.lineTo(29, -15);
-  ctx.stroke();
-
-  // Head.
-  ctx.fillStyle = "#d8ad87";
-  ctx.beginPath();
-  ctx.arc(12, 0, 9, 0, Math.PI * 2);
+  ctx.roundRect(-6.5, -6.5, 10.5, 13, 3.5);
   ctx.fill();
+
+  // Top flap.
+  ctx.fillStyle = "#596c3d";
+  ctx.beginPath();
+  ctx.roundRect(-5.5, -5.5, 8.5, 4.5, 2);
+  ctx.fill();
+
+  // Buckle.
+  ctx.fillStyle = "#b39a5c";
+  ctx.fillRect(-2, -4, 2.5, 1.5);
+
+  // Side pockets.
+  ctx.fillStyle = "#2b4028";
+  ctx.beginPath();
+  ctx.roundRect(-7, -5, 2.5, 4, 1);
+  ctx.roundRect(-7, 1, 2.5, 4, 1);
+  ctx.fill();
+
+  ctx.restore();
+
+  // ----------------------------------------
+  // ARMS — CONNECTED, STRONG AND DEFINED
+  // ----------------------------------------
+
+  function drawArm(side, holdingKnife) {
+    const shoulderX = 2;
+    const shoulderY = side * 8;
+
+    const elbowX = holdingKnife ? 9 : 8;
+    const elbowY = side * 13;
+
+    const wristX = holdingKnife ? 20 : 15;
+    const wristY = holdingKnife ? -10 : side * 14;
+
+    // Dark outer silhouette.
+    ctx.strokeStyle = "#202d20";
+    ctx.lineWidth = 8;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    ctx.beginPath();
+    ctx.moveTo(shoulderX, shoulderY);
+    ctx.lineTo(elbowX, elbowY);
+    ctx.lineTo(wristX, wristY);
+    ctx.stroke();
+
+    // Warm, muscular upper arm.
+    const skin = ctx.createLinearGradient(
+      2, shoulderY - 4, 13, wristY + 3
+    );
+    skin.addColorStop(0, "#e0a273");
+    skin.addColorStop(0.45, "#c98255");
+    skin.addColorStop(1, "#9f6344");
+
+    ctx.strokeStyle = skin;
+    ctx.lineWidth = 5.5;
+
+    ctx.beginPath();
+    ctx.moveTo(shoulderX, shoulderY);
+    ctx.lineTo(elbowX, elbowY);
+    ctx.lineTo(wristX, wristY);
+    ctx.stroke();
+
+    // Defined bicep.
+    ctx.fillStyle = "#d99a6a";
+    ctx.beginPath();
+    ctx.ellipse(
+      5.5,
+      side * 10.5,
+      4.1,
+      3.1,
+      -0.25,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+
+    // Subtle muscle definition.
+    ctx.strokeStyle = "rgba(255, 215, 168, 0.38)";
+    ctx.lineWidth = 0.9;
+    ctx.beginPath();
+    ctx.arc(5.5, side * 10.5, 2.6, -1.1, 1.1);
+    ctx.stroke();
+
+    // Forearm contour.
+    ctx.strokeStyle = "rgba(255, 207, 156, 0.35)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(elbowX + 1, elbowY);
+    ctx.lineTo(wristX - 1, wristY);
+    ctx.stroke();
+
+    // Tactical glove.
+    ctx.fillStyle = "#1b281f";
+    ctx.beginPath();
+    ctx.ellipse(wristX, wristY, 3.7, 3.1, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#45523c";
+    ctx.beginPath();
+    ctx.ellipse(
+      wristX - 0.5,
+      wristY - 0.7,
+      2.2,
+      1.5,
+      0,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+  }
+
+  // Both arms sit outside the torso.
+  drawArm(1, false);
+  drawArm(-1, true);
+
+  // ----------------------------------------
+  // TORSO — DEEP ARMY-OLIVE UNIFORM
+  // ----------------------------------------
+
+  // Outer body silhouette.
+  ctx.fillStyle = "#1d2d1e";
+  ctx.beginPath();
+  ctx.ellipse(-1, 0, 16, 12.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Rich olive fabric.
+  const uniform = ctx.createLinearGradient(-14, -11, 12, 11);
+  uniform.addColorStop(0, "#596a3c");
+  uniform.addColorStop(0.35, "#465a31");
+  uniform.addColorStop(0.75, "#354a2b");
+  uniform.addColorStop(1, "#293b25");
+
+  ctx.fillStyle = uniform;
+  ctx.beginPath();
+  ctx.ellipse(-1, 0, 14.5, 11, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Broad shoulder armour.
+  ctx.fillStyle = "#4c6135";
+  ctx.strokeStyle = "#263a25";
+  ctx.lineWidth = 1.2;
+
+  ctx.beginPath();
+  ctx.ellipse(2, -8.5, 5.5, 3.5, -0.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.ellipse(2, 8.5, 5.5, 3.5, 0.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Tactical vest.
+  ctx.fillStyle = "#283d27";
+  ctx.beginPath();
+  ctx.roundRect(-8, -7.5, 15, 15, 3.5);
+  ctx.fill();
+
+  const vest = ctx.createLinearGradient(-6, -7, 6, 7);
+  vest.addColorStop(0, "#617342");
+  vest.addColorStop(1, "#34492c");
+
+  ctx.fillStyle = vest;
+  ctx.beginPath();
+  ctx.roundRect(-6.5, -6, 12, 12, 2.5);
+  ctx.fill();
+
+  // Chest plate.
+  ctx.fillStyle = "#465c34";
+  ctx.beginPath();
+  ctx.roundRect(-4.5, -4.5, 8.5, 9, 2);
+  ctx.fill();
+
+  // Chest plate seam.
+  ctx.strokeStyle = "rgba(180, 183, 127, 0.4)";
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(-0.5, -3.5);
+  ctx.lineTo(-0.5, 3.5);
+  ctx.stroke();
+
+  // Utility pouches.
+  ctx.fillStyle = "#263923";
+  ctx.beginPath();
+  ctx.roundRect(-8, -6, 3.5, 4.5, 1);
+  ctx.roundRect(-8, 1.5, 3.5, 4.5, 1);
+  ctx.fill();
+
+  // Pouch clasps.
+  ctx.fillStyle = "#9d915c";
+  ctx.fillRect(-7, -4.5, 1.5, 1);
+  ctx.fillRect(-7, 3, 1.5, 1);
+
+  // Belt.
+  ctx.strokeStyle = "#202a20";
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(-13, 0);
+  ctx.lineTo(10, 0);
+  ctx.stroke();
+
+  // Belt buckle.
+  ctx.fillStyle = "#b5a064";
+  ctx.fillRect(-1, -1.5, 3, 3);
+
+  // ----------------------------------------
+  // HEAD — FULL, STYLED DEEP-BROWN HAIR
+  // ----------------------------------------
+
+  // Neck.
+  ctx.fillStyle = "#a86c4b";
+  ctx.beginPath();
+  ctx.ellipse(10, 0, 4, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Full hair silhouette.
+  ctx.fillStyle = "#211711";
+  ctx.beginPath();
+  ctx.ellipse(14, 0, 9.5, 9, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Main dark-brown hair.
+  const hair = ctx.createRadialGradient(11, -4, 1, 14, 0, 11);
+  hair.addColorStop(0, "#593a28");
+  hair.addColorStop(0.55, "#38251c");
+  hair.addColorStop(1, "#201712");
+
+  ctx.fillStyle = hair;
+  ctx.beginPath();
+  ctx.ellipse(14, 0, 8.8, 8.3, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Swept, fuller front hairstyle.
+  ctx.fillStyle = "#493021";
+  ctx.beginPath();
+  ctx.moveTo(7, -4);
+  ctx.quadraticCurveTo(8, -10, 15, -9);
+  ctx.quadraticCurveTo(22, -8, 22, -2);
+  ctx.quadraticCurveTo(19, -5, 15, -5);
+  ctx.quadraticCurveTo(10, -3, 7, -4);
+  ctx.fill();
+
+  // Subtle natural shine, no streaks.
+  ctx.strokeStyle = "rgba(143, 102, 70, 0.22)";
+  ctx.lineWidth = 1.3;
+  ctx.beginPath();
+  ctx.arc(13, -1.5, 5.8, -2.5, -1.25);
+  ctx.stroke();
+
+  // Face at the front.
+  ctx.fillStyle = "#ce9068";
+  ctx.beginPath();
+  ctx.ellipse(20, 0, 3.2, 4.2, 0, -Math.PI / 2, Math.PI / 2);
+  ctx.fill();
+
+  // ----------------------------------------
+  // KNIFE — HORIZONTAL POLISHED STEEL
+  // ----------------------------------------
+
+  // Handle.
+  ctx.fillStyle = "#202a27";
+  ctx.beginPath();
+  ctx.roundRect(18, -12, 7, 3.5, 1.2);
+  ctx.fill();
+
+  // Grip texture.
+  ctx.strokeStyle = "#78827b";
+  ctx.lineWidth = 0.7;
+  ctx.beginPath();
+  ctx.moveTo(20, -11.5);
+  ctx.lineTo(20, -9.5);
+  ctx.moveTo(22, -11.5);
+  ctx.lineTo(22, -9.5);
+  ctx.stroke();
+
+  // Guard.
+  ctx.fillStyle = "#aebbc0";
+  ctx.fillRect(24, -13, 1.5, 5);
+
+  // Blade.
+  const blade = ctx.createLinearGradient(25, -13, 25, -8);
+  blade.addColorStop(0, "#ffffff");
+  blade.addColorStop(0.3, "#dcecf2");
+  blade.addColorStop(0.65, "#91adba");
+  blade.addColorStop(1, "#f7fbff");
+
+  ctx.fillStyle = blade;
+  ctx.beginPath();
+  ctx.moveTo(25, -12.5);
+  ctx.lineTo(37, -11);
+  ctx.lineTo(41, -10.5);
+  ctx.lineTo(37, -9.5);
+  ctx.lineTo(25, -9);
+  ctx.closePath();
+  ctx.fill();
+
+  // Reflective blade edge.
+  ctx.strokeStyle = "rgba(255,255,255,0.9)";
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(25, -12.5);
+  ctx.lineTo(37, -11);
+  ctx.lineTo(41, -10.5);
+  ctx.stroke();
 
   ctx.restore();
 }
