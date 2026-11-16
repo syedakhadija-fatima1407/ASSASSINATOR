@@ -38,54 +38,119 @@ for (let y = 0; y < WORLD_ROWS; y++) {
 
 const obstacles = [
   // =====================================
-  // CONCRETE WALLS — 13 formations
+  // CONCRETE WALLS — ORIGINAL 12 SHAPES
   // =====================================
-  [2, 3, 1, 5],
-  [2, 7, 4, 1],
 
-  [7, 3, 3, 1],
-  [9, 3, 1, 3],
+  [2, 3, 1, 4],
+  [2, 6, 3, 1],
+  [6, 3, 3, 1],
+  [8, 3, 1, 3],
 
   [4, 8, 1, 3],
-  [4, 11, 4, 1],
-
-  [10, 7, 1, 4],
+  [4, 10, 3, 1],
   [8, 7, 3, 1],
+  [10, 7, 1, 3],
 
   [2, 13, 3, 1],
   [2, 13, 1, 3],
-
-  [7, 15, 4, 1],
-  [10, 13, 1, 3],
-
-  [4, 14, 2, 2],
+  [7, 13, 3, 1],
+  [9, 13, 1, 3],
 
   // =====================================
-  // WOODEN CRATES
+  // THREE NEW CONCRETE WALLS
   // =====================================
-  [8, 4, 1, 1],
-  [8, 5, 1, 1],
 
-  [1, 9, 1, 2],
+  // Top boundary: centred wall.
+  // Six tiles because the top-right cargo L
+  // already occupies part of this boundary row.
+  [3, 1, 6, 1],
 
-  [4, 5, 1, 2],
+  // Three-tile wall attached inside top-right cargo L.
+  [8, 2, 3, 1],
 
-  [9, 12, 1, 1],
-
-  // =====================================
-  // BLUE CARGO CONTAINERS
-  // =====================================
-  [1, 5, 1, 1],
-  [8, 12, 2, 1],
-  [8, 16, 2, 1],
+  // Middle-right: three-tile wall below the
+  // four wooden crates, with one tile of space.
+  [7, 11, 3, 1],
 
   // =====================================
-  // ADDITIONAL WOODEN CRATES
+  // WOODEN CRATES — INDICES 15–25
   // =====================================
-  [10, 4, 1, 2],
-  [7, 13, 2, 1],
-  [3, 16, 2, 1]
+
+  // Upper-left corner.
+  [1, 1, 1, 1],
+
+  // Middle-left: original five crates.
+  [1, 8, 1, 1],
+  [1, 9, 1, 1],
+  [1, 10, 1, 1],
+  [2, 9, 1, 1],
+  [2, 10, 1, 1],
+
+  // Middle-right: four crates in a 2 x 2 group.
+  [8, 8, 1, 1],
+  [9, 8, 1, 1],
+  [8, 9, 1, 1],
+  [9, 9, 1, 1],
+
+  // Bottom-right: preserve existing arrangement.
+  [10, 15, 1, 1],
+  [11, 15, 1, 1],
+  [11, 14, 1, 1],
+
+  // =====================================
+  // BLUE CARGO CONTAINERS — INDEX 26 ONWARD
+  // =====================================
+
+  // Upper-left: three containers in one horizontal row,
+  // touching the horizontal arm of the concrete L.
+  [3, 5, 1, 1],
+  [4, 5, 1, 1],
+  [5, 5, 1, 1],
+
+  // Upper-right cargo L — unchanged.
+  [9, 1, 1, 1],
+  [10, 1, 1, 1],
+  [11, 1, 1, 1],
+  [11, 2, 1, 1],
+  [11, 3, 1, 1],
+  [11, 4, 1, 1],
+
+  // Middle-left: two containers vertically,
+  // touching the horizontal concrete L.
+  [5, 8, 1, 1],
+  [5, 9, 1, 1],
+
+  // Four containers below the five wooden crates.
+  [1, 11, 1, 1],
+  [2, 11, 1, 1],
+  [1, 12, 1, 1],
+  [2, 12, 1, 1],
+
+  // Right boundary: four containers moved
+  // two tiles upward.
+  [11, 8, 1, 1],
+  [11, 9, 1, 1],
+  [11, 10, 1, 1],
+  [11, 11, 1, 1],
+
+  // Lower section: six containers horizontally
+  // between the two lower concrete L formations.
+  [3, 15, 1, 1],
+[4, 15, 1, 1],
+[5, 15, 1, 1],
+[6, 15, 1, 1],
+[7, 15, 1, 1],
+[8, 15, 1, 1],
+  // Bottom-left corner: three containers
+  // along the bottom boundary.
+  [1, 17, 1, 1],
+  [2, 17, 1, 1],
+  [3, 17, 1, 1],
+
+  // Bottom-right: original 2 x 2 cargo container.
+  [10, 16, 2, 2]
 ];
+
 
 // Add every obstacle to the collision map.
 for (const [x, y, w, h] of obstacles) {
@@ -797,39 +862,166 @@ function roundedRectPath(x, y, w, h, r) {
 }
 
 // Industrial concrete warehouse floor.
+
 function drawFloor() {
-  ctx.fillStyle = "#aaa9a0";
+  // ------------------------------------------------
+  // 1. BASE CONCRETE SURFACE
+  // ------------------------------------------------
+
+  ctx.save();
+
+  ctx.fillStyle = "#aaa99f";
   ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+
+  const base = ctx.createLinearGradient(
+    0, 0, WORLD_WIDTH, WORLD_HEIGHT
+  );
+
+  base.addColorStop(0, "#b6b4a9");
+  base.addColorStop(0.45, "#aaa99f");
+  base.addColorStop(1, "#99988f");
+
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+
+  // ------------------------------------------------
+  // 2. SOFT, NATURAL CONCRETE TILE VARIATION
+  // ------------------------------------------------
 
   for (let y = 0; y < WORLD_ROWS; y++) {
     for (let x = 0; x < WORLD_COLS; x++) {
       const px = x * TILE;
       const py = y * TILE;
 
-      const shade = ((x * 13 + y * 7) % 5) * 2;
+      // Deterministic variation: never flickers between frames.
+      const seed = (x * 127 + y * 311 + x * y * 17) % 97;
+      const shade = (seed % 9) - 4;
 
-      ctx.fillStyle = `rgb(${174-shade},${174-shade},${164-shade})`;
+      ctx.fillStyle = `rgba(${shade > 0 ? 255 : 45},${shade > 0 ? 255 : 45},${shade > 0 ? 255 : 42},0.018)`;
       ctx.fillRect(px, py, TILE, TILE);
 
-      // Concrete floor tile joints.
-      ctx.strokeStyle = "rgba(75,75,68,0.12)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(px, py, TILE, TILE);
+      // Soft, irregular concrete discoloration.
+      const spotX = px + 12 + (seed * 7 % 35);
+      const spotY = py + 10 + (seed * 13 % 35);
+      const radius = 13 + (seed % 12);
 
-      // Subtle concrete surface marks.
-      ctx.fillStyle = "rgba(70,65,55,0.045)";
-      ctx.fillRect(
-        px + 8 + ((x * 17 + y * 11) % 35),
-        py + 9 + ((x * 9 + y * 19) % 35),
-        12,
-        3
+      const stain = ctx.createRadialGradient(
+        spotX, spotY, 1,
+        spotX, spotY, radius
       );
 
-      ctx.fillStyle = "rgba(255,255,255,0.08)";
-      ctx.fillRect(px + 5, py + 5, TILE - 10, 2);
+      stain.addColorStop(0, "rgba(91,85,73,0.075)");
+      stain.addColorStop(0.65, "rgba(112,105,91,0.035)");
+      stain.addColorStop(1, "rgba(112,105,91,0)");
+
+      ctx.fillStyle = stain;
+      ctx.fillRect(px, py, TILE, TILE);
+
+      // Tiny concrete aggregate marks.
+      for (let i = 0; i < 5; i++) {
+        const dotX = px + 7 + ((seed * (i + 3) * 11) % 46);
+        const dotY = py + 7 + ((seed * (i + 5) * 7) % 46);
+        const dotSize = 1 + (i % 2);
+
+        ctx.fillStyle = i % 2 === 0
+          ? "rgba(70,68,59,0.10)"
+          : "rgba(245,241,224,0.16)";
+
+        ctx.fillRect(dotX, dotY, dotSize, dotSize);
+      }
     }
   }
+
+  // ------------------------------------------------
+  
+  // ------------------------------------------------
+  // 3. SMALL 2x2 CONCRETE FLOOR TILES
+  // ------------------------------------------------
+
+  const smallTile = TILE / 2;
+
+  for (let x = 0; x <= WORLD_WIDTH; x += smallTile) {
+    ctx.strokeStyle = "rgba(66,65,58,0.13)";
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, WORLD_HEIGHT);
+    ctx.stroke();
+
+    ctx.strokeStyle = "rgba(245,242,228,0.12)";
+    ctx.beginPath();
+    ctx.moveTo(x + 1, 0);
+    ctx.lineTo(x + 1, WORLD_HEIGHT);
+    ctx.stroke();
+  }
+
+  for (let y = 0; y <= WORLD_HEIGHT; y += smallTile) {
+    ctx.strokeStyle = "rgba(66,65,58,0.13)";
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(WORLD_WIDTH, y);
+    ctx.stroke();
+
+    ctx.strokeStyle = "rgba(245,242,228,0.12)";
+    ctx.beginPath();
+    ctx.moveTo(0, y + 1);
+    ctx.lineTo(WORLD_WIDTH, y + 1);
+    ctx.stroke();
+  }
+
+
+  // ------------------------------------------------
+  // 4. DIFFUSED WAREHOUSE LIGHTING
+  // ------------------------------------------------
+
+  function addLight(x, y, radius, strength) {
+    const light = ctx.createRadialGradient(
+      x, y, 0,
+      x, y, radius
+    );
+
+    light.addColorStop(0, `rgba(255,245,218,${strength})`);
+    light.addColorStop(0.45, `rgba(255,239,211,${strength * 0.4})`);
+    light.addColorStop(1, "rgba(255,239,211,0)");
+
+    ctx.fillStyle = light;
+    ctx.fillRect(
+      x - radius,
+      y - radius,
+      radius * 2,
+      radius * 2
+    );
+  }
+
+  addLight(WORLD_WIDTH * 0.25, WORLD_HEIGHT * 0.22, 260, 0.13);
+  addLight(WORLD_WIDTH * 0.78, WORLD_HEIGHT * 0.48, 300, 0.10);
+  addLight(WORLD_WIDTH * 0.42, WORLD_HEIGHT * 0.82, 250, 0.09);
+
+  // ------------------------------------------------
+  // 5. GENTLE WAREHOUSE EDGE DARKENING
+  // ------------------------------------------------
+
+  const edge = ctx.createRadialGradient(
+    WORLD_WIDTH / 2,
+    WORLD_HEIGHT / 2,
+    WORLD_WIDTH * 0.2,
+    WORLD_WIDTH / 2,
+    WORLD_HEIGHT / 2,
+    WORLD_HEIGHT * 0.72
+  );
+
+  edge.addColorStop(0, "rgba(35,34,29,0)");
+  edge.addColorStop(1, "rgba(35,34,29,0.13)");
+
+  ctx.fillStyle = edge;
+  ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+
+  ctx.restore();
 }
+
 
 // Individual concrete barrier blocks.
 
@@ -1006,195 +1198,248 @@ function drawConcreteL(x, y, w, h, mirror = false) {
   ctx.restore();
 }
 
-
 // Blue industrial shipping containers.
+
+
 function drawCargoContainer(x, y, w, h, hazard = false) {
-  const px = x * TILE + 2;
-  const py = y * TILE + 2;
-  const width = w * TILE - 4;
-  const height = h * TILE - 4;
+  const scale = 0.6;
+  const size = TILE * scale;
 
-  ctx.save();
-
-  // Container shadow.
-  ctx.shadowColor = "rgba(0,0,0,0.42)";
-  ctx.shadowBlur = 13;
-  ctx.shadowOffsetY = 7;
-
-  roundedRectPath(px, py, width, height, 10);
-  ctx.fillStyle = "#123c59";
-  ctx.fill();
-
-  ctx.shadowColor = "transparent";
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetY = 0;
-
-  // Main blue body.
-  roundedRectPath(px + 3, py + 3, width - 6, height - 6, 8);
-
-  const gradient = ctx.createLinearGradient(
-    px, py, px + width, py + height
-  );
-
-  gradient.addColorStop(0, "#287da7");
-  gradient.addColorStop(0.5, "#17638d");
-  gradient.addColorStop(1, "#10496f");
-
-  ctx.fillStyle = gradient;
-  ctx.fill();
-
-  ctx.strokeStyle = "#092e48";
-  ctx.lineWidth = 3;
-  ctx.stroke();
-
-  // Container panels.
-  const panelWidth = width / w;
-
-  for (let col = 0; col < w; col++) {
-    const panelX = px + col * panelWidth;
-
-    ctx.fillStyle = col % 2 === 0
-      ? "rgba(72,166,207,0.17)"
-      : "rgba(5,42,69,0.15)";
-
-    ctx.fillRect(
-      panelX + 3,
-      py + 5,
-      panelWidth - 6,
-      height - 10
-    );
-
-    ctx.strokeStyle = "rgba(5,38,60,0.6)";
-    ctx.lineWidth = 2;
-
-    ctx.beginPath();
-    ctx.moveTo(panelX, py + 7);
-    ctx.lineTo(panelX, py + height - 7);
-    ctx.stroke();
-
-    // Raised metal ridges.
-    for (let r = 9; r < height - 8; r += 12) {
-      ctx.strokeStyle = "rgba(110,190,220,0.25)";
-      ctx.lineWidth = 2;
-
-      ctx.beginPath();
-      ctx.moveTo(panelX + 5, py + r);
-      ctx.lineTo(panelX + panelWidth - 5, py + r);
-      ctx.stroke();
-    }
-  }
-
-  // Reinforced corner edges.
-  ctx.strokeStyle = "#70a9c2";
-  ctx.lineWidth = 3;
-  ctx.strokeRect(px + 7, py + 7, width - 14, height - 14);
-
-  // Some containers have diagonal reinforced panels.
-  if (w >= 2 && h >= 2) {
-    ctx.strokeStyle = "rgba(120,190,220,0.32)";
-    ctx.lineWidth = 7;
-
-    ctx.beginPath();
-    ctx.moveTo(px + 15, py + 15);
-    ctx.lineTo(px + width - 15, py + height - 15);
-    ctx.moveTo(px + width - 15, py + 15);
-    ctx.lineTo(px + 15, py + height - 15);
-    ctx.stroke();
-  }
-
-  // Yellow-black industrial hazard striping.
-  if (hazard) {
-    const stripeY = py + 5;
-    const stripeHeight = 10;
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(px + 7, stripeY, width - 14, stripeHeight);
-    ctx.clip();
-
-    ctx.fillStyle = "#e6bd35";
-    ctx.fillRect(px + 7, stripeY, width - 14, stripeHeight);
-
-    ctx.strokeStyle = "#252525";
-    ctx.lineWidth = 5;
-
-    for (let sx = px - 20; sx < px + width + 20; sx += 18) {
-      ctx.beginPath();
-      ctx.moveTo(sx, stripeY + stripeHeight);
-      ctx.lineTo(sx + 12, stripeY);
-      ctx.stroke();
-    }
-
-    ctx.restore();
-  }
-
-  ctx.restore();
-}
-
-function drawWoodenCrate(x, y, w, h) {
   for (let row = 0; row < h; row++) {
     for (let col = 0; col < w; col++) {
-      const px = (x + col) * TILE;
-      const py = (y + row) * TILE;
-      const size = TILE;
+      const pos = getPackedObjectPosition(x + col, y + row, "cargo");
+
+      const px = pos.x;
+      const py = pos.y;
 
       ctx.save();
 
-      // Shadow
-      ctx.fillStyle = "rgba(0, 0, 0, 0.38)";
-      ctx.fillRect(px + 4, py + 5, size, size);
+      ctx.shadowColor = "rgba(0,0,0,0.35)";
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetY = 4;
 
-      // Wooden surface
-      const wood = ctx.createLinearGradient(
+      roundedRectPath(px, py, size, size, 4);
+      ctx.fillStyle = "#092b40";
+      ctx.fill();
+
+      ctx.shadowColor = "transparent";
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+
+      roundedRectPath(px + 2, py + 2, size - 4, size - 4, 3);
+
+      const blue = ctx.createLinearGradient(
         px, py, px + size, py + size
       );
-      wood.addColorStop(0, "#b47a3e");
-      wood.addColorStop(0.5, "#98602f");
-      wood.addColorStop(1, "#704322");
 
-      ctx.fillStyle = wood;
-      ctx.fillRect(px, py, size, size);
+      blue.addColorStop(0, "#245d7b");
+      blue.addColorStop(0.35, "#164967");
+      blue.addColorStop(0.75, "#103c58");
+      blue.addColorStop(1, "#0a2d45");
 
-      // Outer wooden border
-      ctx.strokeStyle = "#503019";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(px, py, size, size);
+      ctx.fillStyle = blue;
+      ctx.fill();
 
-      // Wooden planks
-      ctx.strokeStyle = "rgba(65, 35, 15, 0.65)";
+      ctx.strokeStyle = "#092638";
       ctx.lineWidth = 2;
+      ctx.stroke();
 
-      for (let i = 1; i <= 3; i++) {
-        const lineX = px + (size / 4) * i;
+      const panelCount = 3;
+
+      for (let i = 0; i < panelCount; i++) {
+        const ribX = px + 7 + i * ((size - 14) / panelCount);
+
+        ctx.strokeStyle = "rgba(4,23,37,0.38)";
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(lineX, py + 3);
-        ctx.lineTo(lineX, py + size - 3);
+        ctx.moveTo(ribX, py + 6);
+        ctx.lineTo(ribX, py + size - 6);
+        ctx.stroke();
+
+        ctx.strokeStyle = "rgba(103,164,190,0.22)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(ribX + 2, py + 6);
+        ctx.lineTo(ribX + 2, py + size - 6);
         ctx.stroke();
       }
 
-      // Cross-bracing
-      ctx.strokeStyle = "#d09a5c";
-      ctx.lineWidth = 4;
-
+      ctx.strokeStyle = "rgba(130,185,205,0.30)";
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(px + 8, py + 8);
-      ctx.lineTo(px + size - 8, py + size - 8);
-      ctx.moveTo(px + size - 8, py + 8);
-      ctx.lineTo(px + 8, py + size - 8);
+      ctx.moveTo(px + 7, py + 5);
+      ctx.lineTo(px + size - 7, py + 5);
       ctx.stroke();
 
-      // Corner details
-      ctx.fillStyle = "#49301d";
-      const nailSize = 3;
+      ctx.fillStyle = "#53778a";
 
       [
-        [px + 7, py + 7],
-        [px + size - 10, py + 7],
-        [px + 7, py + size - 10],
-        [px + size - 10, py + size - 10]
-      ].forEach(([nx, ny]) => {
-        ctx.fillRect(nx, ny, nailSize, nailSize);
+        [px + 5, py + 5],
+        [px + size - 9, py + 5],
+        [px + 5, py + size - 9],
+        [px + size - 9, py + size - 9]
+      ].forEach(([cx, cy]) => ctx.fillRect(cx, cy, 4, 4));
+
+      if (hazard) {
+        ctx.fillStyle = "#d5aa35";
+        ctx.fillRect(px + 7, py + 9, size - 14, 5);
+      }
+
+      ctx.restore();
+    }
+  }
+}
+
+
+function getPackedObjectPosition(x, y, type) {
+  const size = TILE * 0.6;
+  const cells = new Set();
+
+  // All wooden and blue cargo objects.
+  // Concrete formations are excluded.
+  obstacles.slice(15).forEach(([ox, oy, ow, oh]) => {
+    for (let cx = ox; cx < ox + ow; cx++) {
+      for (let cy = oy; cy < oy + oh; cy++) {
+        cells.add(`${cx},${cy}`);
+      }
+    }
+  });
+
+  const component = new Set([`${x},${y}`]);
+  const queue = [[x, y]];
+
+  while (queue.length) {
+    const [cx, cy] = queue.shift();
+
+    for (const [nx, ny] of [
+      [cx - 1, cy],
+      [cx + 1, cy],
+      [cx, cy - 1],
+      [cx, cy + 1]
+    ]) {
+      const key = `${nx},${ny}`;
+
+      if (cells.has(key) && !component.has(key)) {
+        component.add(key);
+        queue.push([nx, ny]);
+      }
+    }
+  }
+
+  const points = [...component].map(p => p.split(",").map(Number));
+
+  const minX = Math.min(...points.map(p => p[0]));
+  const maxX = Math.max(...points.map(p => p[0]));
+  const minY = Math.min(...points.map(p => p[1]));
+  const maxY = Math.max(...points.map(p => p[1]));
+
+  const width = (maxX - minX + 1) * size;
+  const height = (maxY - minY + 1) * size;
+
+  const originalWidth = (maxX - minX + 1) * TILE;
+  const originalHeight = (maxY - minY + 1) * TILE;
+
+  let px = minX * TILE + (originalWidth - width) / 2;
+  let py = minY * TILE + (originalHeight - height) / 2;
+
+  // Attach to left or right boundary.
+  if (minX === 1) {
+    px = TILE;
+  } else if (maxX === WORLD_COLS - 2) {
+    px = (WORLD_COLS - 1) * TILE - width;
+  }
+
+  // Attach to top or bottom boundary.
+  if (minY === 1) {
+    py = TILE;
+  } else if (maxY === WORLD_ROWS - 2) {
+    py = (WORLD_ROWS - 1) * TILE - height;
+  }
+
+  return {
+    x: px + (x - minX) * size,
+    y: py + (y - minY) * size
+  };
+}
+
+
+function drawWoodenCrate(x, y, w, h) {
+  const s = TILE * 0.6;
+
+  for (let row = 0; row < h; row++) {
+    for (let col = 0; col < w; col++) {
+      const pos = getPackedObjectPosition(x + col, y + row, "wood");
+      const px = pos.x;
+      const py = pos.y;
+
+      ctx.save();
+
+      ctx.fillStyle = "rgba(0,0,0,0.25)";
+      ctx.beginPath();
+      ctx.roundRect(px + 2, py + 3, s - 1, s - 1, 4);
+      ctx.fill();
+
+      ctx.fillStyle = "#50301d";
+      ctx.beginPath();
+      ctx.roundRect(px, py, s, s, 4);
+      ctx.fill();
+
+      const wood = ctx.createLinearGradient(px, py, px + s, py + s);
+      wood.addColorStop(0, "#bd8951");
+      wood.addColorStop(0.45, "#a97542");
+      wood.addColorStop(1, "#80532f");
+
+      ctx.fillStyle = wood;
+      ctx.beginPath();
+      ctx.roundRect(px + 3, py + 3, s - 6, s - 6, 3);
+      ctx.fill();
+
+      for (let i = 0; i < 3; i++) {
+        const stripY = py + 6 + i * (s * 0.24);
+
+        ctx.fillStyle = i === 1
+          ? "rgba(77,43,23,0.12)"
+          : "rgba(235,190,130,0.13)";
+
+        ctx.fillRect(px + 6, stripY, s - 12, s * 0.12);
+
+        ctx.strokeStyle = "rgba(76,46,26,0.28)";
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(px + 6, stripY + s * 0.12);
+        ctx.lineTo(px + s - 6, stripY + s * 0.12);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = "rgba(66,38,22,0.20)";
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(px + s * 0.34, py + 7);
+      ctx.lineTo(px + s * 0.34, py + s - 7);
+      ctx.moveTo(px + s * 0.66, py + 7);
+      ctx.lineTo(px + s * 0.66, py + s - 7);
+      ctx.stroke();
+
+      const corners = [
+        [px + 5, py + 5],
+        [px + s - 9, py + 5],
+        [px + 5, py + s - 9],
+        [px + s - 9, py + s - 9]
+      ];
+
+      corners.forEach(([cx, cy]) => {
+        ctx.fillStyle = "#5c5548";
+        ctx.fillRect(cx, cy, 4, 4);
+        ctx.fillStyle = "rgba(220,207,173,0.55)";
+        ctx.fillRect(cx + 1, cy + 1, 2, 1);
       });
+
+      ctx.strokeStyle = "rgba(255,218,167,0.32)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(px + 6, py + 4);
+      ctx.lineTo(px + s - 6, py + 4);
+      ctx.stroke();
 
       ctx.restore();
     }
@@ -1203,10 +1448,12 @@ function drawWoodenCrate(x, y, w, h) {
 
 
 function drawConcreteLayout() {
-  const depth = 9;
+  const depth = 3;
+const inset = 6;
   const concreteTiles = new Set();
 
-  obstacles.slice(0, 13).forEach(([x, y, w, h]) => {
+  // There are 15 concrete formations in the obstacles array.
+  obstacles.slice(0, 15).forEach(([x, y, w, h]) => {
     for (let tx = x; tx < x + w; tx++) {
       for (let ty = y; ty < y + h; ty++) {
         concreteTiles.add(`${tx},${ty}`);
@@ -1218,35 +1465,41 @@ function drawConcreteLayout() {
     return concreteTiles.has(`${x},${y}`);
   }
 
+  function bounds(x, y) {
+    return {
+      left: x * TILE + (hasTile(x - 1, y) ? 0 : inset),
+      right: (x + 1) * TILE - (hasTile(x + 1, y) ? 0 : inset),
+      top: y * TILE + (hasTile(x, y - 1) ? 0 : inset),
+      bottom: (y + 1) * TILE - (hasTile(x, y + 1) ? 0 : inset)
+    };
+  }
+
   ctx.save();
 
-  // Clip concrete to the warehouse.
   ctx.beginPath();
   ctx.rect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
   ctx.clip();
 
-  // Create one continuous path for the concrete surface.
+  // Soft, unified ground shadow.
   ctx.beginPath();
 
   concreteTiles.forEach(key => {
     const [x, y] = key.split(",").map(Number);
+    const b = bounds(x, y);
 
-    // No gaps between neighbouring concrete tiles.
     ctx.rect(
-      x * TILE,
-      y * TILE,
-      TILE,
-      TILE
+      b.left,
+      b.top,
+      b.right - b.left,
+      b.bottom - b.top
     );
   });
 
-  // One shared ground shadow.
   ctx.shadowColor = "rgba(0,0,0,0.34)";
-  ctx.shadowBlur = 11;
-  ctx.shadowOffsetX = 3;
-  ctx.shadowOffsetY = 5;
-
-  ctx.fillStyle = "#514f49";
+  ctx.shadowBlur = 8;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 3;
+  ctx.fillStyle = "#45443f";
   ctx.fill();
 
   ctx.shadowColor = "transparent";
@@ -1254,93 +1507,110 @@ function drawConcreteLayout() {
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
 
-  // Smooth exposed right-facing sides.
+  // Right-facing 2.5D sides.
   concreteTiles.forEach(key => {
     const [x, y] = key.split(",").map(Number);
 
     if (!hasTile(x + 1, y)) {
-      const px = (x + 1) * TILE;
-      const py = y * TILE;
+      const b = bounds(x, y);
 
       ctx.beginPath();
-      ctx.moveTo(px, py);
-      ctx.lineTo(px + depth, py + depth);
-      ctx.lineTo(px + depth, py + TILE + depth);
-      ctx.lineTo(px, py + TILE);
+      ctx.moveTo(b.right, b.top);
+      ctx.lineTo(b.right + depth, b.top + depth);
+      ctx.lineTo(b.right + depth, b.bottom + depth);
+      ctx.lineTo(b.right, b.bottom);
       ctx.closePath();
 
       const side = ctx.createLinearGradient(
-        px, py,
-        px + depth, py
+        b.right, b.top, b.right + depth, b.top
       );
 
-      side.addColorStop(0, "#65635c");
-      side.addColorStop(1, "#393a36");
+      side.addColorStop(0, "#55534d");
+      side.addColorStop(1, "#35342f");
 
       ctx.fillStyle = side;
       ctx.fill();
     }
   });
 
-  // Smooth exposed front-facing sides.
+  // Front-facing 2.5D sides.
   concreteTiles.forEach(key => {
     const [x, y] = key.split(",").map(Number);
 
     if (!hasTile(x, y + 1)) {
-      const px = x * TILE;
-      const py = (y + 1) * TILE;
+      const b = bounds(x, y);
 
       ctx.beginPath();
-      ctx.moveTo(px, py);
-      ctx.lineTo(px + TILE, py);
-      ctx.lineTo(px + TILE + depth, py + depth);
-      ctx.lineTo(px + depth, py + depth);
+      ctx.moveTo(b.left, b.bottom);
+      ctx.lineTo(b.right, b.bottom);
+      ctx.lineTo(b.right + depth, b.bottom + depth);
+      ctx.lineTo(b.left + depth, b.bottom + depth);
       ctx.closePath();
 
       const front = ctx.createLinearGradient(
-        px, py,
-        px, py + depth
+        b.left, b.bottom, b.left, b.bottom + depth
       );
 
-      front.addColorStop(0, "#66645d");
-      front.addColorStop(1, "#41413c");
+      front.addColorStop(0, "#5b5952");
+      front.addColorStop(1, "#383732");
 
       ctx.fillStyle = front;
       ctx.fill();
     }
   });
 
-  // One continuous-looking top surface.
-  ctx.beginPath();
+  // Continuous concrete top surface.
+  const top = ctx.createLinearGradient(
+    0, 0, WORLD_WIDTH, WORLD_HEIGHT
+  );
+
+  top.addColorStop(0, "#77756d");
+  top.addColorStop(0.5, "#6c6a63");
+  top.addColorStop(1, "#5d5b55");
+
+  ctx.fillStyle = top;
 
   concreteTiles.forEach(key => {
     const [x, y] = key.split(",").map(Number);
+    const b = bounds(x, y);
 
-    ctx.rect(
-      x * TILE,
-      y * TILE,
-      TILE,
-      TILE
+    ctx.fillRect(
+      b.left,
+      b.top,
+      b.right - b.left,
+      b.bottom - b.top
     );
   });
 
-  const topGradient = ctx.createLinearGradient(
-    0, 0,
-    WORLD_WIDTH, WORLD_HEIGHT
-  );
+  // Restrained highlights along exposed upper edges.
+  ctx.strokeStyle = "rgba(190,187,174,0.18)";
+  ctx.lineWidth = 1;
 
-  topGradient.addColorStop(0, "#b2afa5");
-  topGradient.addColorStop(0.5, "#99968d");
-  topGradient.addColorStop(1, "#85837b");
+  concreteTiles.forEach(key => {
+    const [x, y] = key.split(",").map(Number);
+    const b = bounds(x, y);
 
-  ctx.fillStyle = topGradient;
-  ctx.fill();
+    ctx.beginPath();
+
+    if (!hasTile(x, y - 1)) {
+      ctx.moveTo(b.left + 2, b.top + 1);
+      ctx.lineTo(b.right - 2, b.top + 1);
+    }
+
+    if (!hasTile(x - 1, y)) {
+      ctx.moveTo(b.left + 1, b.top + 2);
+      ctx.lineTo(b.left + 1, b.bottom - 2);
+    }
+
+    ctx.stroke();
+  });
 
   ctx.restore();
 }
 
 
 // Draw all warehouse obstacles with different industrial materials.
+
 
 function drawObstacles() {
   // Outer warehouse walls.
@@ -1366,24 +1636,20 @@ function drawObstacles() {
     );
   }
 
-  // All concrete is rendered as one connected layout.
+  // Draw all 15 concrete formations.
   drawConcreteLayout();
 
-  // Wooden crates and blue cargo containers.
   obstacles.forEach(([x, y, w, h], index) => {
-      // Wooden crates.
-     // Wooden crates: original and newly added groups.
-if (
-  (index >= 13 && index <= 17) ||
-  (index >= 21 && index <= 23)
-) {
-  drawWoodenCrate(x, y, w, h);
-}
 
-// Blue cargo containers.
-if (index >= 18 && index <= 20) {
-  drawCargoContainer(x, y, w, h, false);
-}
+    // Wooden crates: indices 15–25.
+    if (index >= 15 && index <= 25) {
+      drawWoodenCrate(x, y, w, h);
+    }
+
+    // Cargo containers: index 26 onward.
+    if (index >= 26) {
+      drawCargoContainer(x, y, w, h, false);
+    }
   });
 }
 
