@@ -2,7 +2,7 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const TILE = 60;
-const WORLD_COLS = 16;
+const WORLD_COLS = 13;
 const WORLD_ROWS = 19;
 const WORLD_WIDTH = WORLD_COLS * TILE;
 const WORLD_HEIGHT = WORLD_ROWS * TILE;
@@ -38,60 +38,63 @@ for (let y = 0; y < WORLD_ROWS; y++) {
 
 const obstacles = [
   // =====================================
-  // CONCRETE WALLS — KEEP EXACTLY AS THEY ARE
+  // CONCRETE WALLS — 13 formations
   // =====================================
-  [3, 3, 1, 5],
-  [3, 7, 4, 1],
+  [2, 3, 1, 5],
+  [2, 7, 4, 1],
 
   [7, 3, 3, 1],
   [9, 3, 1, 3],
 
-  [6, 8, 1, 4],
-  [6, 11, 4, 1],
+  [4, 8, 1, 3],
+  [4, 11, 4, 1],
 
-  [12, 7, 1, 4],
-  [10, 7, 3, 1],
+  [10, 7, 1, 4],
+  [8, 7, 3, 1],
 
-  [3, 13, 3, 1],
-  [3, 13, 1, 3],
+  [2, 13, 3, 1],
+  [2, 13, 1, 3],
 
-  [8, 15, 4, 1],
-  [11, 13, 1, 3],
+  [7, 15, 4, 1],
+  [10, 13, 1, 3],
 
-  [5, 14, 2, 2],
-
-  // =====================================
-  // EXISTING WOODEN CRATES
-  // =====================================
-  [9, 4, 2, 1],
-  [9, 5, 2, 1],
-
-  [2, 10, 1, 2],
-
-  [5, 5, 1, 2],
-
-  [13, 15, 2, 1],
+  [4, 14, 2, 2],
 
   // =====================================
-  // EXISTING BLUE CARGO CONTAINERS
+  // WOODEN CRATES
   // =====================================
-  [12, 5, 2, 1],  // Relocated to avoid concrete overlap.
-  [12, 11, 2, 1],
-  [12, 17, 2, 1],
+  [8, 4, 1, 1],
+  [8, 5, 1, 1],
+
+  [1, 9, 1, 2],
+
+  [4, 5, 1, 2],
+
+  [9, 12, 1, 1],
 
   // =====================================
-  // NEW WOODEN CRATE FORMATIONS
+  // BLUE CARGO CONTAINERS
   // =====================================
+  [1, 5, 1, 1],
+  [8, 12, 2, 1],
+  [8, 16, 2, 1],
 
-  // Extends the upper crate formation.
-  [11, 4, 1, 2],
-
-  // Lower-middle storage group.
+  // =====================================
+  // ADDITIONAL WOODEN CRATES
+  // =====================================
+  [10, 4, 1, 2],
   [7, 13, 2, 1],
-
-  // Connected lower-right crate formation.
-  [13, 13, 2, 2]
+  [3, 16, 2, 1]
 ];
+
+// Add every obstacle to the collision map.
+for (const [x, y, w, h] of obstacles) {
+  for (let row = y; row < y + h; row++) {
+    for (let col = x; col < x + w; col++) {
+      map[row][col] = 1;
+    }
+  }
+}
 
 for (const [x, y, w, h] of obstacles) {
   for (let row = y; row < y + h; row++)
@@ -357,16 +360,16 @@ const guards = [
   ]),
 
   makeGuard(11, 2, [
-    [11,2], [12,2], [12,3], [11,3]
-  ]),
+  [11,2], [10,2], [10,3], [11,3]
+]),
 
   makeGuard(5, 9, [
     [5,9], [5,10], [6,10], [6,9]
   ]),
 
   makeGuard(9, 9, [
-    [9,9], [9,10], [10,10], [10,9]
-  ])
+  [9,9], [9,10], [8,10], [8,9]
+])
 ];
 // Shorter and narrower vision.
 const VISION_RANGE = TILE*2.5;
@@ -723,17 +726,20 @@ function updatePlayer(delta) {
 
   player.health = Math.max(0, player.health);
 }
+
 function assassinateGuard(guard) {
   if (!guard || guard.dead) return;
 
-  // Eliminate the selected guard.
-  guard.dead = true;
+  // Stop the assassin at the guard's exact position.
+  player.x = guard.x;
+  player.y = guard.y;
 
+  // Eliminate the guard.
+  guard.dead = true;
   eliminated++;
 
-  // Stop following the eliminated guard.
+  // Cancel every remaining movement instruction.
   targetGuard = null;
-
   path = [];
   pathIndex = 0;
 
@@ -742,34 +748,38 @@ function assassinateGuard(guard) {
 
   showMessage("Guard assassinated!");
 
-  // Update the target counter immediately.
+  // Update the target counter.
   document.getElementById("target-counter").textContent =
     `🎯 ${eliminated} / ${guards.length}`;
 }
-function movePlayer(dx,dy,delta) {
-  const amount=player.speed*delta;
-  const nx=player.x+dx*amount;
-  const ny=player.y+dy*amount;
 
-  if (canStandAt(nx,player.y)) player.x=nx;
-  if (canStandAt(player.x,ny)) player.y=ny;
+function movePlayer(dx, dy, delta) {
+  const amount = player.speed * delta;
 
-  player.angle=Math.atan2(dy,dx);
-  player.walkTime+=delta*10;
+  const nx = player.x + dx * amount;
+  const ny = player.y + dy * amount;
+
+  if (canStandAt(nx, player.y)) player.x = nx;
+  if (canStandAt(player.x, ny)) player.y = ny;
+
+  player.angle = Math.atan2(dy, dx);
+  player.walkTime += delta * 10;
+
+  // Check whether the assassin has reached a guard.
+  for (const guard of guards) {
+    if (guard.dead) continue;
+
+    const distance = Math.hypot(
+      guard.x - player.x,
+      guard.y - player.y
+    );
+
+    if (distance <= 40) {
+      assassinateGuard(guard);
+      break;
+    }
+  }
 }
-
-function updateCamera(delta) {
-  const maxX=Math.max(0,WORLD_WIDTH-screenWidth);
-  const maxY=Math.max(0,WORLD_HEIGHT-screenHeight);
-
-  const tx=Math.max(0,Math.min(maxX,player.x-screenWidth/2));
-  const ty=Math.max(0,Math.min(maxY,player.y-screenHeight/2));
-
-  const smoothing=1-Math.exp(-camera.smoothness*delta);
-  camera.x+=(tx-camera.x)*smoothing;
-  camera.y+=(ty-camera.y)*smoothing;
-}
-
 
 // Rounded rectangle helper.
 function roundedRectPath(x, y, w, h, r) {
@@ -1191,10 +1201,12 @@ function drawWoodenCrate(x, y, w, h) {
   }
 }
 
+
 function drawConcreteLayout() {
   const depth = 9;
   const concreteTiles = new Set();
-obstacles.slice(0, 13).forEach(([x, y, w, h]) => {
+
+  obstacles.slice(0, 13).forEach(([x, y, w, h]) => {
     for (let tx = x; tx < x + w; tx++) {
       for (let ty = y; ty < y + h; ty++) {
         concreteTiles.add(`${tx},${ty}`);
@@ -1208,26 +1220,27 @@ obstacles.slice(0, 13).forEach(([x, y, w, h]) => {
 
   ctx.save();
 
-  // Keep the concrete inside the warehouse.
+  // Clip concrete to the warehouse.
   ctx.beginPath();
-ctx.rect(0, 0, WORLD_COLS * TILE, WORLD_ROWS * TILE);
+  ctx.rect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
   ctx.clip();
 
-  // Build one combined path from all concrete tiles.
+  // Create one continuous path for the concrete surface.
   ctx.beginPath();
 
   concreteTiles.forEach(key => {
     const [x, y] = key.split(",").map(Number);
 
+    // No gaps between neighbouring concrete tiles.
     ctx.rect(
-      x * TILE + 2,
-      y * TILE + 2,
-      TILE - 4,
-      TILE - 4
+      x * TILE,
+      y * TILE,
+      TILE,
+      TILE
     );
   });
 
-  // One shared shadow for the complete concrete layout.
+  // One shared ground shadow.
   ctx.shadowColor = "rgba(0,0,0,0.34)";
   ctx.shadowBlur = 11;
   ctx.shadowOffsetX = 3;
@@ -1241,23 +1254,24 @@ ctx.rect(0, 0, WORLD_COLS * TILE, WORLD_ROWS * TILE);
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
 
-  // Exposed right-facing sides only.
+  // Smooth exposed right-facing sides.
   concreteTiles.forEach(key => {
     const [x, y] = key.split(",").map(Number);
 
     if (!hasTile(x + 1, y)) {
-      const px = (x + 1) * TILE - 2;
-      const py = y * TILE + 2;
+      const px = (x + 1) * TILE;
+      const py = y * TILE;
 
       ctx.beginPath();
       ctx.moveTo(px, py);
       ctx.lineTo(px + depth, py + depth);
-      ctx.lineTo(px + depth, py + TILE - 2 + depth);
-      ctx.lineTo(px, py + TILE - 2);
+      ctx.lineTo(px + depth, py + TILE + depth);
+      ctx.lineTo(px, py + TILE);
       ctx.closePath();
 
       const side = ctx.createLinearGradient(
-        px, py, px + depth, py
+        px, py,
+        px + depth, py
       );
 
       side.addColorStop(0, "#65635c");
@@ -1268,23 +1282,24 @@ ctx.rect(0, 0, WORLD_COLS * TILE, WORLD_ROWS * TILE);
     }
   });
 
-  // Exposed front-facing sides only.
+  // Smooth exposed front-facing sides.
   concreteTiles.forEach(key => {
     const [x, y] = key.split(",").map(Number);
 
     if (!hasTile(x, y + 1)) {
-      const px = x * TILE + 2;
-      const py = (y + 1) * TILE - 2;
+      const px = x * TILE;
+      const py = (y + 1) * TILE;
 
       ctx.beginPath();
       ctx.moveTo(px, py);
-      ctx.lineTo(px + TILE - 2, py);
-      ctx.lineTo(px + TILE - 2 + depth, py + depth);
+      ctx.lineTo(px + TILE, py);
+      ctx.lineTo(px + TILE + depth, py + depth);
       ctx.lineTo(px + depth, py + depth);
       ctx.closePath();
 
       const front = ctx.createLinearGradient(
-        px, py, px, py + depth
+        px, py,
+        px, py + depth
       );
 
       front.addColorStop(0, "#66645d");
@@ -1295,24 +1310,23 @@ ctx.rect(0, 0, WORLD_COLS * TILE, WORLD_ROWS * TILE);
     }
   });
 
-  // Continuous concrete top surface.
+  // One continuous-looking top surface.
   ctx.beginPath();
 
   concreteTiles.forEach(key => {
     const [x, y] = key.split(",").map(Number);
 
     ctx.rect(
-      x * TILE + 2,
-      y * TILE + 2,
-      TILE - 4,
-      TILE - 4
+      x * TILE,
+      y * TILE,
+      TILE,
+      TILE
     );
   });
 
   const topGradient = ctx.createLinearGradient(
     0, 0,
-    WORLD_COLS * TILE,
-WORLD_ROWS * TILE
+    WORLD_WIDTH, WORLD_HEIGHT
   );
 
   topGradient.addColorStop(0, "#b2afa5");
@@ -1324,6 +1338,7 @@ WORLD_ROWS * TILE
 
   ctx.restore();
 }
+
 
 // Draw all warehouse obstacles with different industrial materials.
 
@@ -1998,6 +2013,24 @@ function drawMessage() {
   ctx.fillStyle="white";
   ctx.fillText(message,screenWidth/2,screenHeight-35);
   ctx.restore();
+}
+
+function updateCamera(delta) {
+  const targetX = player.x - screenWidth / 2;
+  const targetY = player.y - screenHeight / 2;
+
+  const maxX = Math.max(0, WORLD_WIDTH - screenWidth);
+  const maxY = Math.max(0, WORLD_HEIGHT - screenHeight);
+
+  const smooth = Math.min(1, camera.smoothness * delta);
+
+  camera.x += (
+    Math.max(0, Math.min(targetX, maxX)) - camera.x
+  ) * smooth;
+
+  camera.y += (
+    Math.max(0, Math.min(targetY, maxY)) - camera.y
+  ) * smooth;
 }
 
 function gameLoop(timestamp) {
