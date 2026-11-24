@@ -7,6 +7,24 @@ const WORLD_ROWS = 19;
 const WORLD_WIDTH = WORLD_COLS * TILE;
 const WORLD_HEIGHT = WORLD_ROWS * TILE;
 
+
+// ASSASSINATOR PLAYER SPRITE
+const playerSprite = new Image();
+
+playerSprite.src = "assets/assassinator_player_walk_transparent.png";
+
+let playerSpriteLoaded = false;
+
+playerSprite.onload = () => {
+  playerSpriteLoaded = true;
+  console.log("ASSASSINATOR player sprite loaded!");
+};
+
+playerSprite.onerror = () => {
+  console.error("Could not load ASSASSINATOR player sprite.");
+};
+
+
 let screenWidth = innerWidth;
 let screenHeight = innerHeight;
 
@@ -38,118 +56,107 @@ for (let y = 0; y < WORLD_ROWS; y++) {
 
 const obstacles = [
   // =====================================
-  // CONCRETE WALLS — ORIGINAL 12 SHAPES
+  // CONCRETE — INDICES 0 TO 46
   // =====================================
 
-  [2, 3, 1, 4],
-  [2, 6, 3, 1],
-  [6, 3, 3, 1],
-  [8, 3, 1, 3],
+  // Row 2
+  [3, 2, 1, 1],
+  [8, 2, 1, 1],
 
-  [4, 8, 1, 3],
-  [4, 10, 3, 1],
-  [8, 7, 3, 1],
-  [10, 7, 1, 3],
+  // Row 3
+  [2, 3, 1, 1],
+  [3, 3, 1, 1],
+  [8, 3, 1, 1],
 
-  [2, 13, 3, 1],
-  [2, 13, 1, 3],
-  [7, 13, 3, 1],
-  [9, 13, 1, 3],
+  // Row 4
+  [2, 4, 1, 1],
+  [5, 4, 1, 1],
+  [8, 4, 1, 1],
 
-  // =====================================
-  // THREE NEW CONCRETE WALLS
-  // =====================================
-
-  // Top boundary: centred wall.
-  // Six tiles because the top-right cargo L
-  // already occupies part of this boundary row.
-  [3, 1, 6, 1],
-
-  // Three-tile wall attached inside top-right cargo L.
-  [8, 2, 3, 1],
-
-  // Middle-right: three-tile wall below the
-  // four wooden crates, with one tile of space.
-  [7, 11, 3, 1],
-
-  // =====================================
-  // WOODEN CRATES — INDICES 15–25
-  // =====================================
-
-  // Upper-left corner.
-  [1, 1, 1, 1],
-
-  // Middle-left: original five crates.
-  [1, 8, 1, 1],
-  [1, 9, 1, 1],
-  [1, 10, 1, 1],
-  [2, 9, 1, 1],
-  [2, 10, 1, 1],
-
-  // Middle-right: four crates in a 2 x 2 group.
-  [8, 8, 1, 1],
-  [9, 8, 1, 1],
-  [8, 9, 1, 1],
-  [9, 9, 1, 1],
-
-  // Bottom-right: preserve existing arrangement.
-  [10, 15, 1, 1],
-  [11, 15, 1, 1],
-  [11, 14, 1, 1],
-
-  // =====================================
-  // BLUE CARGO CONTAINERS — INDEX 26 ONWARD
-  // =====================================
-
-  // Upper-left: three containers in one horizontal row,
-  // touching the horizontal arm of the concrete L.
-  [3, 5, 1, 1],
-  [4, 5, 1, 1],
+  // Row 5
+  [2, 5, 1, 1],
   [5, 5, 1, 1],
+  [7, 5, 1, 1],
+  [8, 5, 1, 1],
 
-  // Upper-right cargo L — unchanged.
-  [9, 1, 1, 1],
-  [10, 1, 1, 1],
-  [11, 1, 1, 1],
-  [11, 2, 1, 1],
-  [11, 3, 1, 1],
-  [11, 4, 1, 1],
+  // Row 6
+  [5, 6, 1, 1],
+  [8, 6, 1, 1],
+  [9, 6, 1, 1],
+  [10, 6, 1, 1],
 
-  // Middle-left: two containers vertically,
-  // touching the horizontal concrete L.
-  [5, 8, 1, 1],
-  [5, 9, 1, 1],
+  // Row 7
+  [3, 7, 1, 1],
+  [4, 7, 1, 1],
+  [9, 7, 1, 1],
 
-  // Four containers below the five wooden crates.
-  [1, 11, 1, 1],
+  // Row 9
+  [2, 9, 1, 1],
+  [3, 9, 1, 1],
+  [4, 9, 1, 1],
+
+  // Row 10
+  [2, 10, 1, 1],
+  [6, 10, 1, 1],
+
+  // Row 11
   [2, 11, 1, 1],
-  [1, 12, 1, 1],
-  [2, 12, 1, 1],
+  [5, 11, 1, 1],
+  [6, 11, 1, 1],
+  [7, 11, 1, 1],
+  [9, 11, 1, 1],
+  [10, 11, 1, 1],
 
-  // Right boundary: four containers moved
-  // two tiles upward.
-  [11, 8, 1, 1],
-  [11, 9, 1, 1],
-  [11, 10, 1, 1],
-  [11, 11, 1, 1],
+  // Row 12
+  [3, 12, 1, 1],
+  [4, 12, 1, 1],
+  [5, 12, 1, 1],
 
-  // Lower section: six containers horizontally
-  // between the two lower concrete L formations.
+  // Row 13
+  [2, 13, 1, 1],
+  [8, 13, 1, 1],
+
+  // Row 14
+  [2, 14, 1, 1],
+  [5, 14, 1, 1],
+  [6, 14, 1, 1],
+  [7, 14, 1, 1],
+  [8, 14, 1, 1],
+
+  // Row 15
+  [2, 15, 1, 1],
   [3, 15, 1, 1],
-[4, 15, 1, 1],
-[5, 15, 1, 1],
-[6, 15, 1, 1],
-[7, 15, 1, 1],
-[8, 15, 1, 1],
-  // Bottom-left corner: three containers
-  // along the bottom boundary.
-  [1, 17, 1, 1],
-  [2, 17, 1, 1],
-  [3, 17, 1, 1],
+  [5, 15, 1, 1],
+  [8, 15, 1, 1],
 
-  // Bottom-right: original 2 x 2 cargo container.
-  [10, 16, 2, 2]
+  // Row 16
+  [2, 16, 1, 1],
+  [5, 16, 1, 1],
+  [8, 16, 1, 1],
+
+// WOODEN CRATES — INDICES 47 TO 53
+
+[5, 7, 1, 1],
+[5, 2, 1, 1],
+[5, 3, 1, 1],
+[11, 10, 1, 8], // Eight boundary crates
+[3, 16, 1, 1],  // Existing lower-left junction crate
+[2, 12, 1, 1],  // Wooden crate at concrete junction
+[4, 11, 1, 1],  // Additional middle-left wooden crate
+
+// BLUE CARGO — INDEX 54 ONWARD
+
+[11, 1, 1, 3],
+[10, 1, 1, 1],
+[9, 10, 2, 1],
+[9, 14, 1, 3],
+[9, 4, 1, 2],
+[7, 7, 2, 1],
+[7, 16, 1, 1],
+[8, 16, 1, 1],
+[1, 1, 2, 2], // Top-left 2×2 deep teal-blue cargo container
 ];
+
 
 
 // Add every obstacle to the collision map.
@@ -161,27 +168,15 @@ for (const [x, y, w, h] of obstacles) {
   }
 }
 
-for (const [x, y, w, h] of obstacles) {
-  for (let row = y; row < y + h; row++)
-    for (let col = x; col < x + w; col++)
-      map[row][col] = 1;
-}
-
-
-for (const [x, y, w, h] of obstacles) {
-  for (let row = y; row < y + h; row++)
-    for (let col = x; col < x + w; col++)
-      map[row][col] = 1;
-}
 
 const player = {
-  x: TILE * 2.5,
-  y: TILE * 2.5,
+  x: TILE * 6.5,
+  y: TILE * 17.5,
   speed: 190,
   radius: 19,
   health: 100,
   maxHealth: 100,
-  angle: 0,
+  angle: -Math.PI / 2,
   walkTime: 0
 };
 
@@ -818,6 +813,7 @@ function assassinateGuard(guard) {
     `🎯 ${eliminated} / ${guards.length}`;
 }
 
+
 function movePlayer(dx, dy, delta) {
   const amount = player.speed * delta;
 
@@ -827,7 +823,17 @@ function movePlayer(dx, dy, delta) {
   if (canStandAt(nx, player.y)) player.x = nx;
   if (canStandAt(player.x, ny)) player.y = ny;
 
-  player.angle = Math.atan2(dy, dx);
+  // Smoothly rotate towards the direction of movement.
+  const targetAngle = Math.atan2(dy, dx);
+
+  const angleDifference = Math.atan2(
+    Math.sin(targetAngle - player.angle),
+    Math.cos(targetAngle - player.angle)
+  );
+
+  player.angle += angleDifference * Math.min(1, delta * 12);
+
+  // Walking animation timer.
   player.walkTime += delta * 10;
 
   // Check whether the assassin has reached a guard.
@@ -845,6 +851,7 @@ function movePlayer(dx, dy, delta) {
     }
   }
 }
+
 
 // Rounded rectangle helper.
 function roundedRectPath(x, y, w, h, r) {
@@ -1137,148 +1144,212 @@ function drawConcreteCluster(x, y, w, h) {
   ctx.restore();
 }
 
-function drawConcreteL(x, y, w, h, mirror = false) {
-  const px = x * TILE + 2;
-  const py = y * TILE + 2;
-  const width = w * TILE - 4;
-  const height = h * TILE - 4;
-
-  ctx.save();
-
-  function makeShape() {
-    ctx.beginPath();
-
-    if (!mirror) {
-      ctx.moveTo(px, py);
-      ctx.lineTo(px + TILE, py);
-      ctx.lineTo(px + TILE, py + height - TILE);
-      ctx.lineTo(px + width, py + height - TILE);
-      ctx.lineTo(px + width, py + height);
-      ctx.lineTo(px, py + height);
-    } else {
-      ctx.moveTo(px + width - TILE, py);
-      ctx.lineTo(px + width, py);
-      ctx.lineTo(px + width, py + height);
-      ctx.lineTo(px, py + height);
-      ctx.lineTo(px, py + height - TILE);
-      ctx.lineTo(px + width - TILE, py + height - TILE);
-    }
-
-    ctx.closePath();
-  }
-
-  makeShape();
-  ctx.shadowColor = "rgba(0,0,0,0.38)";
-  ctx.shadowBlur = 12;
-  ctx.shadowOffsetY = 6;
-  ctx.fillStyle = "#77766f";
-  ctx.fill();
-
-  ctx.shadowColor = "transparent";
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetY = 0;
-
-  makeShape();
-
-  const gradient = ctx.createLinearGradient(
-    px, py, px + width, py + height
-  );
-
-  gradient.addColorStop(0, "#aaa79e");
-  gradient.addColorStop(0.5, "#96938a");
-  gradient.addColorStop(1, "#77766f");
-
-  ctx.fillStyle = gradient;
-  ctx.fill();
-
-  ctx.strokeStyle = "#514b44";
-  ctx.lineWidth = 3;
-  ctx.stroke();
-
-  ctx.restore();
-}
-
-// Blue industrial shipping containers.
-
 
 function drawCargoContainer(x, y, w, h, hazard = false) {
-  const scale = 0.6;
-  const size = TILE * scale;
+  const isTopLeftCargo =
+    x === 1 && y === 1 && w === 2 && h === 2;
 
-  for (let row = 0; row < h; row++) {
-    for (let col = 0; col < w; col++) {
-      const pos = getPackedObjectPosition(x + col, y + row, "cargo");
+  const isMiddlePair =
+    x === 9 && y === 10 && w === 2 && h === 1;
 
-      const px = pos.x;
-      const py = pos.y;
+  const isUpperVertical =
+    x === 11 && y === 1 && w === 1 && h === 3;
+
+  const isUpperTop =
+    x === 10 && y === 1 && w === 1 && h === 1;
+
+  const isConcreteInnerPair =
+    x === 9 && y === 4 && w === 1 && h === 2;
+
+  const isNewHorizontalPair =
+    x === 7 && y === 7 && w === 2 && h === 1;
+
+  const isLowerVerticalStack =
+    x === 9 && y === 14 && w === 1 && h === 3;
+
+  const isLowerHorizontalTile =
+    y === 16 &&
+    (x === 7 || x === 8) &&
+    w === 1 && h === 1;
+
+  const isLowerLeftCornerCargo =
+    x === 3 && y === 16 && w === 1 && h === 1;
+
+  const isUpperFormation =
+    isUpperVertical || isUpperTop;
+
+  const seamless =
+    isTopLeftCargo ||
+    isUpperFormation ||
+    isConcreteInnerPair ||
+    isNewHorizontalPair ||
+    isLowerVerticalStack ||
+    isLowerHorizontalTile ||
+    isLowerLeftCornerCargo;
+
+  const isLowerFormation =
+    isLowerVerticalStack ||
+    isLowerHorizontalTile ||
+    isLowerLeftCornerCargo;
+
+  const scale = isMiddlePair ? 0.9 : 0.96;
+
+  // Draw the top-left 2×2 formation as ONE container.
+  const size = isTopLeftCargo
+    ? TILE * 2
+    : isLowerFormation
+      ? TILE - 4
+      : TILE * scale;
+
+  const rightEdge = (WORLD_COLS - 1) * TILE;
+  const upperColumnX = rightEdge - size;
+
+  // The top-left 2×2 container is drawn only once.
+  const drawRows = isTopLeftCargo ? 1 : h;
+  const drawCols = isTopLeftCargo ? 1 : w;
+
+  for (let row = 0; row < drawRows; row++) {
+    for (let col = 0; col < drawCols; col++) {
+      const pos = getPackedObjectPosition(
+        x + col, y + row, "cargo"
+      );
+
+      let px = pos.x;
+      let py = pos.y;
+
+      // Top-left corner: flush against both boundaries.
+      if (isTopLeftCargo) {
+        px = TILE;
+        py = TILE;
+      }
+
+      if (isMiddlePair) {
+        px = x * TILE + 6 + col * size;
+        py = y * TILE + 12;
+      }
+
+      if (isUpperVertical) {
+        px = upperColumnX;
+        py = TILE + row * size;
+      }
+
+      if (isUpperTop) {
+        px = upperColumnX - size;
+        py = TILE;
+      }
+
+      if (isConcreteInnerPair) {
+        px = 8 * TILE + 2 + (TILE - 4);
+        py = 6 * TILE + 2 - (2 * size) + row * size;
+      }
+
+      if (isNewHorizontalPair) {
+        px = 9 * TILE + 2 - (2 * size) + col * size;
+        py = 7 * TILE + (TILE - size) / 2;
+      }
+
+      // Lower-right mirrored L.
+      if (isLowerVerticalStack) {
+        px = 9 * TILE + 2;
+        py = 14 * TILE + 2 + row * size;
+      }
+
+      if (isLowerHorizontalTile) {
+        px = x * TILE + 2;
+        py = 16 * TILE + 2;
+      }
+
+      if (isLowerLeftCornerCargo) {
+        px = 3 * TILE - 2;
+        py = 16 * TILE - 2;
+      }
 
       ctx.save();
 
-      ctx.shadowColor = "rgba(0,0,0,0.35)";
-      ctx.shadowBlur = 8;
-      ctx.shadowOffsetY = 4;
+      // Ground shadow.
+      ctx.shadowColor = "rgba(0,0,0,0.32)";
+      ctx.shadowBlur = seamless ? 0 : 8;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = seamless ? 0 : 4;
 
-      roundedRectPath(px, py, size, size, 4);
-      ctx.fillStyle = "#092b40";
+      // Deep teal-blue outer shell.
+      roundedRectPath(px, py, size, size, 6);
+      ctx.fillStyle = "#10343b";
       ctx.fill();
 
       ctx.shadowColor = "transparent";
       ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 0;
 
-      roundedRectPath(px + 2, py + 2, size - 4, size - 4, 3);
+      // Deep teal-blue industrial cargo face.
+      const inset = 3;
+      const faceSize = size - inset * 2;
 
-      const blue = ctx.createLinearGradient(
+      roundedRectPath(
+        px + inset,
+        py + inset,
+        faceSize,
+        faceSize,
+        4
+      );
+
+      const cargoBlue = ctx.createLinearGradient(
         px, py, px + size, py + size
       );
 
-      blue.addColorStop(0, "#245d7b");
-      blue.addColorStop(0.35, "#164967");
-      blue.addColorStop(0.75, "#103c58");
-      blue.addColorStop(1, "#0a2d45");
+      cargoBlue.addColorStop(0, "#347f86");
+      cargoBlue.addColorStop(0.45, "#17636d");
+      cargoBlue.addColorStop(1, "#104650");
 
-      ctx.fillStyle = blue;
+      ctx.fillStyle = cargoBlue;
       ctx.fill();
 
-      ctx.strokeStyle = "#092638";
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      // Horizontal reinforced container ribs.
+      for (let i = 0; i < 4; i++) {
+        const stripY = py + 8 + i * (size * 0.21);
 
-      const panelCount = 3;
+        ctx.fillStyle = "rgba(8,35,42,0.24)";
+        ctx.fillRect(
+          px + 7,
+          stripY,
+          size - 14,
+          size * 0.10
+        );
 
-      for (let i = 0; i < panelCount; i++) {
-        const ribX = px + 7 + i * ((size - 14) / panelCount);
-
-        ctx.strokeStyle = "rgba(4,23,37,0.38)";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(ribX, py + 6);
-        ctx.lineTo(ribX, py + size - 6);
-        ctx.stroke();
-
-        ctx.strokeStyle = "rgba(103,164,190,0.22)";
+        ctx.strokeStyle = "rgba(170,218,219,0.22)";
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(ribX + 2, py + 6);
-        ctx.lineTo(ribX + 2, py + size - 6);
+        ctx.moveTo(px + 7, stripY);
+        ctx.lineTo(px + size - 7, stripY);
         ctx.stroke();
       }
 
-      ctx.strokeStyle = "rgba(130,185,205,0.30)";
-      ctx.lineWidth = 1.5;
+      // Vertical structural reinforcement.
+      ctx.strokeStyle = "rgba(8,39,45,0.48)";
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(px + 7, py + 5);
-      ctx.lineTo(px + size - 7, py + 5);
+      ctx.moveTo(px + size * 0.25, py + 7);
+      ctx.lineTo(px + size * 0.25, py + size - 7);
+      ctx.moveTo(px + size * 0.75, py + 7);
+      ctx.lineTo(px + size * 0.75, py + size - 7);
       ctx.stroke();
 
-      ctx.fillStyle = "#53778a";
-
-      [
+      // Metal corner fittings.
+      const corners = [
         [px + 5, py + 5],
         [px + size - 9, py + 5],
         [px + 5, py + size - 9],
         [px + size - 9, py + size - 9]
-      ].forEach(([cx, cy]) => ctx.fillRect(cx, cy, 4, 4));
+      ];
+
+      corners.forEach(([cx, cy]) => {
+        ctx.fillStyle = "#687b87";
+        ctx.fillRect(cx, cy, 4, 4);
+
+        ctx.fillStyle = "rgba(225,239,245,0.7)";
+        ctx.fillRect(cx + 1, cy + 1, 2, 1);
+      });
 
       if (hazard) {
         ctx.fillStyle = "#d5aa35";
@@ -1292,153 +1363,261 @@ function drawCargoContainer(x, y, w, h, hazard = false) {
 
 
 function getPackedObjectPosition(x, y, type) {
-  const size = TILE * 0.6;
-  const cells = new Set();
+  const size = type === "cargo" ? TILE * 0.96 : TILE * 0.6;
 
-  // All wooden and blue cargo objects.
-  // Concrete formations are excluded.
-  obstacles.slice(15).forEach(([ox, oy, ow, oh]) => {
-    for (let cx = ox; cx < ox + ow; cx++) {
-      for (let cy = oy; cy < oy + oh; cy++) {
-        cells.add(`${cx},${cy}`);
-      }
-    }
-  });
+  const materialCells = new Set();
 
-  const component = new Set([`${x},${y}`]);
-  const queue = [[x, y]];
+  const objects = type === "wood"
+    ? obstacles.slice(47, 52)
+    : obstacles.slice(52);
 
-  while (queue.length) {
-    const [cx, cy] = queue.shift();
-
-    for (const [nx, ny] of [
-      [cx - 1, cy],
-      [cx + 1, cy],
-      [cx, cy - 1],
-      [cx, cy + 1]
-    ]) {
-      const key = `${nx},${ny}`;
-
-      if (cells.has(key) && !component.has(key)) {
-        component.add(key);
-        queue.push([nx, ny]);
+  for (const [ox, oy, ow, oh] of objects) {
+    for (let row = 0; row < oh; row++) {
+      for (let col = 0; col < ow; col++) {
+        materialCells.add(`${ox + col},${oy + row}`);
       }
     }
   }
 
-  const points = [...component].map(p => p.split(",").map(Number));
+  const visited = new Set();
+  let component = [];
 
-  const minX = Math.min(...points.map(p => p[0]));
-  const maxX = Math.max(...points.map(p => p[0]));
-  const minY = Math.min(...points.map(p => p[1]));
-  const maxY = Math.max(...points.map(p => p[1]));
+  for (const cell of materialCells) {
+    if (visited.has(cell)) continue;
 
-  const width = (maxX - minX + 1) * size;
-  const height = (maxY - minY + 1) * size;
+    const queue = [cell];
+    const group = [];
+    visited.add(cell);
 
-  const originalWidth = (maxX - minX + 1) * TILE;
-  const originalHeight = (maxY - minY + 1) * TILE;
+    while (queue.length) {
+      const current = queue.shift();
+      group.push(current);
 
-  let px = minX * TILE + (originalWidth - width) / 2;
-  let py = minY * TILE + (originalHeight - height) / 2;
+      const [cx, cy] = current.split(",").map(Number);
 
-  // Attach to left or right boundary.
-  if (minX === 1) {
-    px = TILE;
-  } else if (maxX === WORLD_COLS - 2) {
-    px = (WORLD_COLS - 1) * TILE - width;
+      const neighbors = [
+        [cx + 1, cy],
+        [cx - 1, cy],
+        [cx, cy + 1],
+        [cx, cy - 1]
+      ];
+
+      for (const [nx, ny] of neighbors) {
+        const key = `${nx},${ny}`;
+
+        if (materialCells.has(key) && !visited.has(key)) {
+          visited.add(key);
+          queue.push(key);
+        }
+      }
+    }
+
+    if (group.includes(`${x},${y}`)) {
+      component = group;
+      break;
+    }
   }
 
-  // Attach to top or bottom boundary.
-  if (minY === 1) {
-    py = TILE;
-  } else if (maxY === WORLD_ROWS - 2) {
-    py = (WORLD_ROWS - 1) * TILE - height;
+  if (component.length === 0) {
+    return {
+      x: x * TILE + (TILE - size) / 2,
+      y: y * TILE + (TILE - size) / 2
+    };
   }
+
+  const coords = component.map(cell =>
+    cell.split(",").map(Number)
+  );
+
+  const minX = Math.min(...coords.map(p => p[0]));
+  const maxX = Math.max(...coords.map(p => p[0]));
+  const minY = Math.min(...coords.map(p => p[1]));
+  const maxY = Math.max(...coords.map(p => p[1]));
+
+  const groupWidth = (maxX - minX + 1) * size;
+  const groupHeight = (maxY - minY + 1) * size;
+
+  const offsetX = minX * TILE + (TILE - groupWidth) / 2;
+  const offsetY = minY * TILE + (TILE - groupHeight) / 2;
 
   return {
-    x: px + (x - minX) * size,
-    y: py + (y - minY) * size
+    x: offsetX + (x - minX) * size,
+    y: offsetY + (y - minY) * size
   };
 }
 
 
 function drawWoodenCrate(x, y, w, h) {
-  const s = TILE * 0.6;
+  const normalSize = TILE * 0.6;
+
+  function isConcreteAt(tx, ty) {
+    return obstacles.slice(0, 47).some(([ox, oy, ow, oh]) =>
+      tx >= ox && tx < ox + ow &&
+      ty >= oy && ty < oy + oh
+    );
+  }
+
+  const isRightBoundaryStack =
+    x === 11 && y === 10 && w === 1 && h === 8;
+
+  const isLowerLeftJunction =
+    x === 3 && y === 16 && w === 1 && h === 1;
 
   for (let row = 0; row < h; row++) {
     for (let col = 0; col < w; col++) {
-      const pos = getPackedObjectPosition(x + col, y + row, "wood");
-      const px = pos.x;
-      const py = pos.y;
+      const cx = x + col;
+      const cy = y + row;
+
+      const isUpperCrate = cx === 5 && cy === 7;
+
+      const isTopLeftStack =
+        cx === 5 && (cy === 2 || cy === 3);
+
+      const isNewFittedCrate =
+        (cx === 2 && cy === 12) ||
+        (cx === 4 && cy === 11);
+
+      const pos = getPackedObjectPosition(cx, cy, "wood");
+
+      let px, py, boxW, boxH, radius;
+
+      if (isRightBoundaryStack) {
+        px = 11 * TILE + 2;
+        py = 10 * TILE + 2 + row * (TILE - 4);
+
+        boxW = TILE - 4;
+        boxH = TILE - 4;
+        radius = 7;
+
+      } else if (isTopLeftStack) {
+  px = cx * TILE + 2;
+
+  // Two crates touch each other and the concrete below.
+  py = 2 * TILE + 2 + (cy - 2) * (TILE - 1);
+
+  boxW = TILE - 4;
+  boxH = TILE - 1;
+  radius = 7;
+
+} else if (isLowerLeftJunction || isNewFittedCrate) {
+  px = cx * TILE + 2;
+  py = cy * TILE + 2;
+
+  boxW = TILE - 4;
+  boxH = TILE - 4;
+  radius = 7;
+
+      } else if (isUpperCrate) {
+        px = cx * TILE + 3;
+        py = cy * TILE + 3;
+        boxW = TILE - 6;
+        boxH = TILE - 6;
+
+        if (isConcreteAt(cx - 1, cy)) {
+          px -= 6;
+          boxW += 6;
+        }
+
+        if (isConcreteAt(cx, cy - 1)) {
+          py -= 6;
+          boxH += 6;
+        }
+
+        radius = 7;
+
+      } else {
+        px = pos.x;
+        py = pos.y;
+        boxW = normalSize;
+        boxH = normalSize;
+        radius = 4;
+      }
 
       ctx.save();
 
+      // Ground shadow.
       ctx.fillStyle = "rgba(0,0,0,0.25)";
       ctx.beginPath();
-      ctx.roundRect(px + 2, py + 3, s - 1, s - 1, 4);
+      ctx.roundRect(px + 2, py + 3, boxW - 1, boxH - 1, radius);
       ctx.fill();
 
+      // Dark wooden border.
       ctx.fillStyle = "#50301d";
       ctx.beginPath();
-      ctx.roundRect(px, py, s, s, 4);
+      ctx.roundRect(px, py, boxW, boxH, radius);
       ctx.fill();
 
-      const wood = ctx.createLinearGradient(px, py, px + s, py + s);
+      // Wooden surface.
+      const wood = ctx.createLinearGradient(
+        px, py, px + boxW, py + boxH
+      );
+
       wood.addColorStop(0, "#bd8951");
       wood.addColorStop(0.45, "#a97542");
       wood.addColorStop(1, "#80532f");
 
       ctx.fillStyle = wood;
       ctx.beginPath();
-      ctx.roundRect(px + 3, py + 3, s - 6, s - 6, 3);
+      ctx.roundRect(
+        px + 3, py + 3,
+        boxW - 6, boxH - 6,
+        Math.max(2, radius - 2)
+      );
       ctx.fill();
 
+      // Horizontal wooden planks.
       for (let i = 0; i < 3; i++) {
-        const stripY = py + 6 + i * (s * 0.24);
+        const stripY = py + 6 + i * (boxH * 0.24);
 
         ctx.fillStyle = i === 1
           ? "rgba(77,43,23,0.12)"
           : "rgba(235,190,130,0.13)";
 
-        ctx.fillRect(px + 6, stripY, s - 12, s * 0.12);
+        ctx.fillRect(
+          px + 6, stripY,
+          boxW - 12, boxH * 0.12
+        );
 
         ctx.strokeStyle = "rgba(76,46,26,0.28)";
         ctx.lineWidth = 0.8;
         ctx.beginPath();
-        ctx.moveTo(px + 6, stripY + s * 0.12);
-        ctx.lineTo(px + s - 6, stripY + s * 0.12);
+        ctx.moveTo(px + 6, stripY + boxH * 0.12);
+        ctx.lineTo(px + boxW - 6, stripY + boxH * 0.12);
         ctx.stroke();
       }
 
+      // Vertical wooden supports.
       ctx.strokeStyle = "rgba(66,38,22,0.20)";
       ctx.lineWidth = 0.8;
       ctx.beginPath();
-      ctx.moveTo(px + s * 0.34, py + 7);
-      ctx.lineTo(px + s * 0.34, py + s - 7);
-      ctx.moveTo(px + s * 0.66, py + 7);
-      ctx.lineTo(px + s * 0.66, py + s - 7);
+      ctx.moveTo(px + boxW * 0.34, py + 7);
+      ctx.lineTo(px + boxW * 0.34, py + boxH - 7);
+      ctx.moveTo(px + boxW * 0.66, py + 7);
+      ctx.lineTo(px + boxW * 0.66, py + boxH - 7);
       ctx.stroke();
 
+      // Corner fittings.
       const corners = [
         [px + 5, py + 5],
-        [px + s - 9, py + 5],
-        [px + 5, py + s - 9],
-        [px + s - 9, py + s - 9]
+        [px + boxW - 9, py + 5],
+        [px + 5, py + boxH - 9],
+        [px + boxW - 9, py + boxH - 9]
       ];
 
       corners.forEach(([cx, cy]) => {
         ctx.fillStyle = "#5c5548";
         ctx.fillRect(cx, cy, 4, 4);
+
         ctx.fillStyle = "rgba(220,207,173,0.55)";
         ctx.fillRect(cx + 1, cy + 1, 2, 1);
       });
 
+      // Top highlight.
       ctx.strokeStyle = "rgba(255,218,167,0.32)";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(px + 6, py + 4);
-      ctx.lineTo(px + s - 6, py + 4);
+      ctx.lineTo(px + boxW - 6, py + 4);
       ctx.stroke();
 
       ctx.restore();
@@ -1453,7 +1632,7 @@ const inset = 6;
   const concreteTiles = new Set();
 
   // There are 15 concrete formations in the obstacles array.
-  obstacles.slice(0, 15).forEach(([x, y, w, h]) => {
+  obstacles.slice(0, 46).forEach(([x, y, w, h]) => {
     for (let tx = x; tx < x + w; tx++) {
       for (let ty = y; ty < y + h; ty++) {
         concreteTiles.add(`${tx},${ty}`);
@@ -1611,13 +1790,13 @@ const inset = 6;
 
 // Draw all warehouse obstacles with different industrial materials.
 
-
 function drawObstacles() {
   // Outer warehouse walls.
   ctx.fillStyle = "#303a3c";
 
   for (let x = 0; x < WORLD_COLS; x++) {
     ctx.fillRect(x * TILE, 0, TILE, TILE);
+
     ctx.fillRect(
       x * TILE,
       (WORLD_ROWS - 1) * TILE,
@@ -1628,6 +1807,7 @@ function drawObstacles() {
 
   for (let y = 0; y < WORLD_ROWS; y++) {
     ctx.fillRect(0, y * TILE, TILE, TILE);
+
     ctx.fillRect(
       (WORLD_COLS - 1) * TILE,
       y * TILE,
@@ -1636,24 +1816,20 @@ function drawObstacles() {
     );
   }
 
-  // Draw all 15 concrete formations.
+  // Continuous concrete formations.
   drawConcreteLayout();
 
-  obstacles.forEach(([x, y, w, h], index) => {
+  // Wooden crates — indices 47 to 53.
+  obstacles.slice(47, 54).forEach(([x, y, w, h]) => {
+    drawWoodenCrate(x, y, w, h);
+  });
 
-    // Wooden crates: indices 15–25.
-    if (index >= 15 && index <= 25) {
-      drawWoodenCrate(x, y, w, h);
-    }
-
-    // Cargo containers: index 26 onward.
-    if (index >= 26) {
-      drawCargoContainer(x, y, w, h, false);
-    }
+  // Blue cargo containers — index 54 onward.
+  obstacles.slice(54).forEach(([x, y, w, h]) => {
+    drawCargoContainer(x, y, w, h);
   });
 }
-
-
+ 
 function drawVision(guard) {
   if (guard.dead) return;
 
@@ -1755,441 +1931,59 @@ function drawGuard(guard) {
   }
 }
 
+
 function drawPlayer() {
+  if (!playerSpriteLoaded) return;
+
   const moving =
     pathIndex < path.length ||
     keys.w || keys.a || keys.s || keys.d ||
     keys.arrowup || keys.arrowdown ||
     keys.arrowleft || keys.arrowright;
 
-  const phase = player.walkTime || 0;
-  const stride = moving ? Math.sin(phase) * 3.2 : 0;
-  const bob = moving ? Math.abs(Math.sin(phase * 2)) * 0.45 : 0;
+  // Sprite sheet: 3 columns × 2 rows.
+  const frameWidth = 512;
+  const frameHeight = 512;
+  const frameCount = 6;
+
+  // Cycle through all six frames while moving.
+  const frame = moving
+    ? Math.floor(player.walkTime * 0.8) % frameCount
+    : 0;
+
+  // Calculate the selected frame's position.
+  const sourceX = (frame % 3) * frameWidth;
+  const sourceY = Math.floor(frame / 3) * frameHeight;
 
   ctx.save();
+
   ctx.translate(player.x, player.y);
-  ctx.rotate(player.angle);
 
-  // Character proportions.
-  ctx.scale(1.08, 1.08);
+  // The sprite faces toward the top of its image.
+  ctx.rotate(player.angle + Math.PI / 2);
 
-  // ----------------------------------------
-  // GROUNDED SHADOW
-  // ----------------------------------------
-
-  ctx.save();
-  ctx.fillStyle = "rgba(12, 17, 10, 0.25)";
-  ctx.shadowColor = "rgba(8, 12, 7, 0.22)";
-  ctx.shadowBlur = 7;
+  // Ground shadow.
+  ctx.fillStyle = "rgba(0,0,0,0.25)";
   ctx.beginPath();
-  ctx.ellipse(-2, 3, 22, 14, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-
-  ctx.translate(0, -bob);
-
-  // ----------------------------------------
-  // LEGS — DIRECTLY UNDER THE TORSO
-  // ----------------------------------------
-
-  function drawLeg(side, step) {
-    const hipX = -6;
-    const hipY = side * 5.5;
-    const kneeX = -10 + step * 0.65;
-    const kneeY = side * 6;
-    const footX = -15 + step;
-
-    // Trouser outline.
-    ctx.strokeStyle = "#202c20";
-    ctx.lineWidth = 8;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    ctx.beginPath();
-    ctx.moveTo(hipX, hipY);
-    ctx.lineTo(kneeX, kneeY);
-    ctx.lineTo(footX, kneeY);
-    ctx.stroke();
-
-    // Deep olive trousers.
-    const trouser = ctx.createLinearGradient(
-      -8, kneeY - 3, -16, kneeY + 3
-    );
-    trouser.addColorStop(0, "#52643a");
-    trouser.addColorStop(0.55, "#394a2d");
-    trouser.addColorStop(1, "#293a25");
-
-    ctx.strokeStyle = trouser;
-    ctx.lineWidth = 5.5;
-    ctx.beginPath();
-    ctx.moveTo(hipX, hipY);
-    ctx.lineTo(kneeX, kneeY);
-    ctx.lineTo(footX, kneeY);
-    ctx.stroke();
-
-    // Knee reinforcement.
-    ctx.fillStyle = "#586a3c";
-    ctx.beginPath();
-    ctx.ellipse(kneeX, kneeY, 3, 2.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Tactical boots, pointing forward.
-    ctx.save();
-    ctx.translate(footX - 2, kneeY);
-
-    ctx.fillStyle = "#18221b";
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 6.5, 3.7, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "#414b3b";
-    ctx.beginPath();
-    ctx.ellipse(1, -0.8, 4.5, 2.4, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = "rgba(190, 194, 157, 0.25)";
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(-2, -1.5);
-    ctx.lineTo(3, -1.5);
-    ctx.stroke();
-
-    ctx.restore();
-  }
-
-  // Far leg first, near leg second.
-  drawLeg(-1, -stride);
-  drawLeg(1, stride);
-
-  // ----------------------------------------
-  // SLIM TACTICAL BACKPACK
-  // ----------------------------------------
-
-  ctx.save();
-  ctx.translate(-13, 0);
-
-  ctx.fillStyle = "#19271b";
-  ctx.beginPath();
-  ctx.roundRect(-8, -7.5, 13, 15, 4);
+  ctx.ellipse(0, 9, 19, 9, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  const pack = ctx.createLinearGradient(-7, -7, 5, 7);
-  pack.addColorStop(0, "#52663a");
-  pack.addColorStop(0.5, "#394e2d");
-  pack.addColorStop(1, "#263923");
-
-  ctx.fillStyle = pack;
-  ctx.beginPath();
-  ctx.roundRect(-6.5, -6.5, 10.5, 13, 3.5);
-  ctx.fill();
-
-  // Top flap.
-  ctx.fillStyle = "#596c3d";
-  ctx.beginPath();
-  ctx.roundRect(-5.5, -5.5, 8.5, 4.5, 2);
-  ctx.fill();
-
-  // Buckle.
-  ctx.fillStyle = "#b39a5c";
-  ctx.fillRect(-2, -4, 2.5, 1.5);
-
-  // Side pockets.
-  ctx.fillStyle = "#2b4028";
-  ctx.beginPath();
-  ctx.roundRect(-7, -5, 2.5, 4, 1);
-  ctx.roundRect(-7, 1, 2.5, 4, 1);
-  ctx.fill();
-
-  ctx.restore();
-
-  // ----------------------------------------
-  // ARMS — CONNECTED, STRONG AND DEFINED
-  // ----------------------------------------
-
-  function drawArm(side, holdingKnife) {
-    const shoulderX = 2;
-    const shoulderY = side * 8;
-
-    const elbowX = holdingKnife ? 9 : 8;
-    const elbowY = side * 13;
-
-    const wristX = holdingKnife ? 20 : 15;
-    const wristY = holdingKnife ? -10 : side * 14;
-
-    // Dark outer silhouette.
-    ctx.strokeStyle = "#202d20";
-    ctx.lineWidth = 8;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    ctx.beginPath();
-    ctx.moveTo(shoulderX, shoulderY);
-    ctx.lineTo(elbowX, elbowY);
-    ctx.lineTo(wristX, wristY);
-    ctx.stroke();
-
-    // Warm, muscular upper arm.
-    const skin = ctx.createLinearGradient(
-      2, shoulderY - 4, 13, wristY + 3
-    );
-    skin.addColorStop(0, "#e0a273");
-    skin.addColorStop(0.45, "#c98255");
-    skin.addColorStop(1, "#9f6344");
-
-    ctx.strokeStyle = skin;
-    ctx.lineWidth = 5.5;
-
-    ctx.beginPath();
-    ctx.moveTo(shoulderX, shoulderY);
-    ctx.lineTo(elbowX, elbowY);
-    ctx.lineTo(wristX, wristY);
-    ctx.stroke();
-
-    // Defined bicep.
-    ctx.fillStyle = "#d99a6a";
-    ctx.beginPath();
-    ctx.ellipse(
-      5.5,
-      side * 10.5,
-      4.1,
-      3.1,
-      -0.25,
-      0,
-      Math.PI * 2
-    );
-    ctx.fill();
-
-    // Subtle muscle definition.
-    ctx.strokeStyle = "rgba(255, 215, 168, 0.38)";
-    ctx.lineWidth = 0.9;
-    ctx.beginPath();
-    ctx.arc(5.5, side * 10.5, 2.6, -1.1, 1.1);
-    ctx.stroke();
-
-    // Forearm contour.
-    ctx.strokeStyle = "rgba(255, 207, 156, 0.35)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(elbowX + 1, elbowY);
-    ctx.lineTo(wristX - 1, wristY);
-    ctx.stroke();
-
-    // Tactical glove.
-    ctx.fillStyle = "#1b281f";
-    ctx.beginPath();
-    ctx.ellipse(wristX, wristY, 3.7, 3.1, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "#45523c";
-    ctx.beginPath();
-    ctx.ellipse(
-      wristX - 0.5,
-      wristY - 0.7,
-      2.2,
-      1.5,
-      0,
-      0,
-      Math.PI * 2
-    );
-    ctx.fill();
-  }
-
-  // Both arms sit outside the torso.
-  drawArm(1, false);
-  drawArm(-1, true);
-
-  // ----------------------------------------
-  // TORSO — DEEP ARMY-OLIVE UNIFORM
-  // ----------------------------------------
-
-  // Outer body silhouette.
-  ctx.fillStyle = "#1d2d1e";
-  ctx.beginPath();
-  ctx.ellipse(-1, 0, 16, 12.5, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Rich olive fabric.
-  const uniform = ctx.createLinearGradient(-14, -11, 12, 11);
-  uniform.addColorStop(0, "#596a3c");
-  uniform.addColorStop(0.35, "#465a31");
-  uniform.addColorStop(0.75, "#354a2b");
-  uniform.addColorStop(1, "#293b25");
-
-  ctx.fillStyle = uniform;
-  ctx.beginPath();
-  ctx.ellipse(-1, 0, 14.5, 11, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Broad shoulder armour.
-  ctx.fillStyle = "#4c6135";
-  ctx.strokeStyle = "#263a25";
-  ctx.lineWidth = 1.2;
-
-  ctx.beginPath();
-  ctx.ellipse(2, -8.5, 5.5, 3.5, -0.2, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.ellipse(2, 8.5, 5.5, 3.5, 0.2, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-
-  // Tactical vest.
-  ctx.fillStyle = "#283d27";
-  ctx.beginPath();
-  ctx.roundRect(-8, -7.5, 15, 15, 3.5);
-  ctx.fill();
-
-  const vest = ctx.createLinearGradient(-6, -7, 6, 7);
-  vest.addColorStop(0, "#617342");
-  vest.addColorStop(1, "#34492c");
-
-  ctx.fillStyle = vest;
-  ctx.beginPath();
-  ctx.roundRect(-6.5, -6, 12, 12, 2.5);
-  ctx.fill();
-
-  // Chest plate.
-  ctx.fillStyle = "#465c34";
-  ctx.beginPath();
-  ctx.roundRect(-4.5, -4.5, 8.5, 9, 2);
-  ctx.fill();
-
-  // Chest plate seam.
-  ctx.strokeStyle = "rgba(180, 183, 127, 0.4)";
-  ctx.lineWidth = 0.8;
-  ctx.beginPath();
-  ctx.moveTo(-0.5, -3.5);
-  ctx.lineTo(-0.5, 3.5);
-  ctx.stroke();
-
-  // Utility pouches.
-  ctx.fillStyle = "#263923";
-  ctx.beginPath();
-  ctx.roundRect(-8, -6, 3.5, 4.5, 1);
-  ctx.roundRect(-8, 1.5, 3.5, 4.5, 1);
-  ctx.fill();
-
-  // Pouch clasps.
-  ctx.fillStyle = "#9d915c";
-  ctx.fillRect(-7, -4.5, 1.5, 1);
-  ctx.fillRect(-7, 3, 1.5, 1);
-
-  // Belt.
-  ctx.strokeStyle = "#202a20";
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.moveTo(-13, 0);
-  ctx.lineTo(10, 0);
-  ctx.stroke();
-
-  // Belt buckle.
-  ctx.fillStyle = "#b5a064";
-  ctx.fillRect(-1, -1.5, 3, 3);
-
-  // ----------------------------------------
-  // HEAD — FULL, STYLED DEEP-BROWN HAIR
-  // ----------------------------------------
-
-  // Neck.
-  ctx.fillStyle = "#a86c4b";
-  ctx.beginPath();
-  ctx.ellipse(10, 0, 4, 4, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Full hair silhouette.
-  ctx.fillStyle = "#211711";
-  ctx.beginPath();
-  ctx.ellipse(14, 0, 9.5, 9, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Main dark-brown hair.
-  const hair = ctx.createRadialGradient(11, -4, 1, 14, 0, 11);
-  hair.addColorStop(0, "#593a28");
-  hair.addColorStop(0.55, "#38251c");
-  hair.addColorStop(1, "#201712");
-
-  ctx.fillStyle = hair;
-  ctx.beginPath();
-  ctx.ellipse(14, 0, 8.8, 8.3, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Swept, fuller front hairstyle.
-  ctx.fillStyle = "#493021";
-  ctx.beginPath();
-  ctx.moveTo(7, -4);
-  ctx.quadraticCurveTo(8, -10, 15, -9);
-  ctx.quadraticCurveTo(22, -8, 22, -2);
-  ctx.quadraticCurveTo(19, -5, 15, -5);
-  ctx.quadraticCurveTo(10, -3, 7, -4);
-  ctx.fill();
-
-  // Subtle natural shine, no streaks.
-  ctx.strokeStyle = "rgba(143, 102, 70, 0.22)";
-  ctx.lineWidth = 1.3;
-  ctx.beginPath();
-  ctx.arc(13, -1.5, 5.8, -2.5, -1.25);
-  ctx.stroke();
-
-  // Face at the front.
-  ctx.fillStyle = "#ce9068";
-  ctx.beginPath();
-  ctx.ellipse(20, 0, 3.2, 4.2, 0, -Math.PI / 2, Math.PI / 2);
-  ctx.fill();
-
-  // ----------------------------------------
-  // KNIFE — HORIZONTAL POLISHED STEEL
-  // ----------------------------------------
-
-  // Handle.
-  ctx.fillStyle = "#202a27";
-  ctx.beginPath();
-  ctx.roundRect(18, -12, 7, 3.5, 1.2);
-  ctx.fill();
-
-  // Grip texture.
-  ctx.strokeStyle = "#78827b";
-  ctx.lineWidth = 0.7;
-  ctx.beginPath();
-  ctx.moveTo(20, -11.5);
-  ctx.lineTo(20, -9.5);
-  ctx.moveTo(22, -11.5);
-  ctx.lineTo(22, -9.5);
-  ctx.stroke();
-
-  // Guard.
-  ctx.fillStyle = "#aebbc0";
-  ctx.fillRect(24, -13, 1.5, 5);
-
-  // Blade.
-  const blade = ctx.createLinearGradient(25, -13, 25, -8);
-  blade.addColorStop(0, "#ffffff");
-  blade.addColorStop(0.3, "#dcecf2");
-  blade.addColorStop(0.65, "#91adba");
-  blade.addColorStop(1, "#f7fbff");
-
-  ctx.fillStyle = blade;
-  ctx.beginPath();
-  ctx.moveTo(25, -12.5);
-  ctx.lineTo(37, -11);
-  ctx.lineTo(41, -10.5);
-  ctx.lineTo(37, -9.5);
-  ctx.lineTo(25, -9);
-  ctx.closePath();
-  ctx.fill();
-
-  // Reflective blade edge.
-  ctx.strokeStyle = "rgba(255,255,255,0.9)";
-  ctx.lineWidth = 0.8;
-  ctx.beginPath();
-  ctx.moveTo(25, -12.5);
-  ctx.lineTo(37, -11);
-  ctx.lineTo(41, -10.5);
-  ctx.stroke();
+  // Draw the selected character frame.
+  ctx.drawImage(
+    playerSprite,
+    sourceX,
+    sourceY,
+    frameWidth,
+    frameHeight,
+    -29,
+    -31,
+    58,
+    62
+  );
 
   ctx.restore();
 }
+
 
 // Draw a narrow yellow route with an arrowhead instead of a circle.
 function drawPathMarker() {
